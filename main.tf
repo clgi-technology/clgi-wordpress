@@ -4,53 +4,101 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
+    }
   }
 }
 
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
-variable "ssh_private_key" {}
+variable "environment" {
+  description = "Deployment environment (prod or sandbox)"
+  type        = string
+
+  validation {
+    condition     = contains(["prod", "sandbox"], var.environment)
+    error_message = "❌ Invalid environment! Choose either 'prod' or 'sandbox'."
+  }
+}
+
+variable "cloud_provider" {
+  description = "The cloud provider to use (aws, gcp, azure)"
+  type        = string
+
+  validation {
+    condition     = contains(["aws", "gcp", "azure"], var.cloud_provider)
+    error_message = "❌ Invalid cloud provider! Choose 'aws', 'gcp', or 'azure'."
+  }
+}
+
+variable "database_type" {
+  description = "Database selection (mysql or postgresql)"
+  type        = string
+
+  validation {
+    condition     = contains(["mysql", "postgresql"], var.database_type)
+    error_message = "❌ Invalid database! Choose 'mysql' or 'postgresql'."
+  }
+}
+
+variable "vm_size" {
+  description = "VM size selection (t3.medium or t3.large)"
+  type        = string
+
+  validation {
+    condition     = contains(["t3.medium", "t3.large"], var.vm_size)
+    error_message = "❌ Invalid VM size! Choose 't3.medium' or 't3.large'."
+  }
+}
 
 provider "aws" {
-  region     = "us-east-1"
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  region = var.region
+  count  = var.cloud_provider == "aws" ? 1 : 0
+}
+
+provider "google" {
+  project     = var.gcp_project
+  region      = var.region
+  credentials = file("${path.module}/gcp_credentials.json")
+  count       = var.cloud_provider == "gcp" ? 1 : 0
+}
+
+provider "azurerm" {
+  features {}
+  count = var.cloud_provider == "azure" ? 1 : 0
 }
 
 resource "aws_instance" "main" {
   ami           = "ami-0abcdef1234567890"
-  instance_type = "t3.medium"
+  instance_type = var.vm_size
   key_name      = "wordpress-key"
   tags = {
-    Name = "CLGI-WordPress"
+    Name = var.vm_name
   }
 }
 
 resource "null_resource" "wordpress_setup" {
   provisioner "remote-exec" {
     inline = [
-      "echo \"🔄 Installing WordPress & Plugins...\" | tee -a /home/ubuntu/wp-setup.log",
+      "echo \"[$(date)] 🔄 Installing WordPress...\" | tee -a /home/ubuntu/wordpress-setup.log",
       "sudo apt update && sudo apt install -y apache2 php mysql-server",
       "wget https://wordpress.org/latest.tar.gz",
       "tar -xvf latest.tar.gz",
       "sudo mv wordpress /var/www/html/",
-
-      # Clone CLGI website structure
+      "echo \"[$(date)] ✅ WordPress installed!\" | tee -a /home/ubuntu/wordpress-setup.log",
+      
+      "echo \"[$(date)] 🔄 Cloning CLGI Website...\" | tee -a /home/ubuntu/wordpress-setup.log",
       "wget -r -np -nH --cut-dirs=1 -P /var/www/html/clgi_clone https://www.clgi.org",
-      "echo \"✅ CLGI Site Structure Copied!\" | tee -a /home/ubuntu/wp-setup.log",
-
-      # Apply CLGI theme
+      "echo \"[$(date)] ✅ Site structure copied!\" | tee -a /home/ubuntu/wordpress-setup.log",
+      
+      "echo \"[$(date)] 🔄 Applying CLGI Theme...\" | tee -a /home/ubuntu/wordpress-setup.log",
       "wget -P /var/www/html/wp-content/themes/ https://www.clgi.org/wp-content/themes/clgi-theme.zip",
       "unzip /var/www/html/wp-content/themes/clgi-theme.zip -d /var/www/html/wp-content/themes/",
-      "echo \"✅ CLGI Theme Installed!\" | tee -a /home/ubuntu/wp-setup.log",
-
-      # Install essential WordPress plugins
-      "wget -P /var/www/html/wp-content/plugins/ https://downloads.wordpress.org/plugin/yoast-seo.zip",
-      "wget -P /var/www/html/wp-content/plugins/ https://downloads.wordpress.org/plugin/contact-form-7.zip",
-      "wget -P /var/www/html/wp-content/plugins/ https://downloads.wordpress.org/plugin/wp-super-cache.zip",
-      "wget -P /var/www/html/wp-content/plugins/ https://downloads.wordpress.org/plugin/wordfence.zip",
-      "unzip /var/www/html/wp-content/plugins/*.zip -d /var/www/html/wp-content/plugins/",
-      "echo \"✅ WordPress Plugins Installed!\" | tee -a /home/ubuntu/wp-setup.log"
+      "echo \"[$(date)] ✅ Theme installed!\" | tee -a /home/ubuntu/wordpress-setup.log"
     ]
   }
 
@@ -58,7 +106,7 @@ resource "null_resource" "wordpress_setup" {
     type        = "ssh"
     host        = aws_instance.main.public_ip
     user        = "ubuntu"
-    private_key = file(var.ssh_private_key)
+    private_key = file("${path.module}/ssh-key.pem")
   }
 }
 
@@ -67,23 +115,24 @@ resource "null_resource" "wordpress_health_check" {
 
   provisioner "remote-exec" {
     inline = [
-      "echo \"🔍 Starting health check for WordPress...\" | tee -a /home/ubuntu/wp-setup.log",
+      "echo \"[$(date)] 🔍 Starting health check for WordPress...\" | tee -a /home/ubuntu/wordpress-setup.log",
       "attempts=0",
       "max_attempts=5",
       "while [ $attempts -lt $max_attempts ]; do",
       "  http_code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost)",
+      "  echo \"[$(date)] HTTP Response: $http_code\" | tee -a /home/ubuntu/wordpress-setup.log",
       "  if [ $http_code -eq 200 ]; then",
-      "    echo \"✅ WordPress is up and running!\" | tee -a /home/ubuntu/wp-setup.log",
+      "    echo \"[$(date)] ✅ WordPress is up and running!\" | tee -a /home/ubuntu/wordpress-setup.log",
       "    exit 0",
       "  else",
-      "    echo \"⚠️ WordPress not ready (HTTP $http_code), retrying...\" | tee -a /home/ubuntu/wp-setup.log",
+      "    echo \"[$(date)] ⚠️ WordPress not ready (HTTP $http_code), retrying...\" | tee -a /home/ubuntu/wordpress-setup.log",
       "    attempts=$((attempts+1))",
       "    sleep 5",
       "  fi",
       "done",
-      "echo \"❌ WordPress failed health check! Running targeted rollback...\" | tee -a /home/ubuntu/wp-setup.log",
-      "terraform destroy -target=aws_instance.main -auto-approve",
-      "terraform apply -target=aws_instance.main -auto-approve"
+      "echo \"[$(date)] ❌ WordPress failed health check! Running rollback...\" | tee -a /home/ubuntu/wordpress-setup.log",
+      "terraform destroy -auto-approve",
+      "terraform apply -auto-approve"
     ]
   }
 
@@ -91,7 +140,7 @@ resource "null_resource" "wordpress_health_check" {
     type        = "ssh"
     host        = aws_instance.main.public_ip
     user        = "ubuntu"
-    private_key = file(var.ssh_private_key)
+    private_key = file("${path.module}/ssh-key.pem")
   }
 }
 
