@@ -12,35 +12,21 @@ Write-Host "🔍 Choose Deployment Mode"
 Write-Host "Options: production, sandbox"
 $deploymentMode = Read-Host "Enter deployment mode"
 
+# 📩 Ask for email for notifications
+Write-Host "🔔 Would you like to receive deployment notifications via email?"
+$emailAddress = Read-Host "Enter your email (or leave blank to skip)"
+
 Write-Host "✅ Deploying in: $deploymentMode mode"
 terraform init
 
+# Retrieve VM IP from Terraform output
+$vmIP = terraform output -raw vm_ip
+
 if ($deploymentMode -eq "sandbox") {
     Write-Host "🚀 Deploying Sandbox Environment with Django..."
-    ssh ubuntu@$vmIP "sudo apt update && sudo apt install -y python3 python3-pip"
+    ssh ubuntu@$vmIP "sudo apt update && sudo apt install -y python3 python3-pip mailutils"
     ssh ubuntu@$vmIP "pip3 install django"
     ssh ubuntu@$vmIP "django-admin startproject sandbox_app /home/ubuntu/sandbox"
-
-    Write-Host "🔍 Clone an existing website? [Y/N]"
-    $cloneChoice = Read-Host "Enter Y or N"
-
-    if ($cloneChoice -eq "Y") {
-        Write-Host "Enter website URL to clone or press Enter to use www.clgi.org"
-        $websiteURL = Read-Host "Website URL"
-
-        if ($websiteURL -eq "") {
-            $websiteURL = "https://www.clgi.org"
-        }
-
-        Write-Host "🚀 Cloning website: $websiteURL"
-        ssh ubuntu@$vmIP "pip3 install requests beautifulsoup4"
-        ssh ubuntu@$vmIP "python3 /home/ubuntu/sandbox/clone_site.py $websiteURL"
-
-        ssh ubuntu@$vmIP "mkdir -p /home/ubuntu/sandbox/static"
-        ssh ubuntu@$vmIP "mv /home/ubuntu/sandbox/clgi_clone/* /home/ubuntu/sandbox/static/"
-
-        Write-Host "✅ Website cloned and ready!"
-    }
 
     # Generate Backup Script
     Write-Host "🔍 Generating automated backup script..."
@@ -48,19 +34,24 @@ if ($deploymentMode -eq "sandbox") {
     ssh ubuntu@$vmIP "echo 'python3 manage.py dumpdata > /home/ubuntu/sandbox_backup.json' >> /home/ubuntu/sandbox/auto_backup.sh"
     ssh ubuntu@$vmIP "echo 'tar -czvf /home/ubuntu/sandbox_media_backup.tar.gz /home/ubuntu/sandbox/static' >> /home/ubuntu/sandbox/auto_backup.sh"
     ssh ubuntu@$vmIP "chmod +x /home/ubuntu/sandbox/auto_backup.sh"
-    
+
     # Schedule Backup
     ssh ubuntu@$vmIP "echo '0 0 * * * /home/ubuntu/sandbox/auto_backup.sh' | crontab -"
     Write-Host "✅ Sandbox auto-backup scheduled every 24 hours!"
 
     Write-Host "✅ Sandbox environment is live!"
     Write-Host "Web Access: http://$vmIP:8000"
-    Write-Host "🔑 Admin Panel Access: http://$vmIP:8000/admin"
-    Write-Host "Use username 'admin' and your chosen password to log in."
+
+    # Send Email Notification (if provided)
+    if ($emailAddress -ne "") {
+        Write-Host "📩 Sending notification to $emailAddress"
+        ssh ubuntu@$vmIP "echo 'Sandbox Deployment Completed' | mail -s 'Sandbox Ready' $emailAddress"
+    }
 } elseif ($deploymentMode -eq "production") {
     Write-Host "🚀 Checking for latest sandbox backups..."
-    $sandboxBackupExists = Test-Path "sandbox_backup.json"
-    $sandboxMediaExists = Test-Path "sandbox_media_backup.tar.gz"
+    
+    $sandboxBackupExists = ssh ubuntu@$vmIP "test -f /home/ubuntu/sandbox_backup.json && echo 'exists'"
+    $sandboxMediaExists = ssh ubuntu@$vmIP "test -f /home/ubuntu/sandbox_media_backup.tar.gz && echo 'exists'"
 
     if ($sandboxBackupExists -or $sandboxMediaExists) {
         Write-Host "🔍 Sandbox changes are available!"
@@ -69,15 +60,8 @@ if ($deploymentMode -eq "sandbox") {
 
         if ($useSandbox -eq "Y") {
             Write-Host "🚀 Restoring latest sandbox data..."
-            
-            # Generate Restore Script
-            ssh ubuntu@$vmIP "echo '#!/bin/bash' > /home/ubuntu/restore_sandbox.sh"
-            ssh ubuntu@$vmIP "echo 'python3 manage.py loaddata /home/ubuntu/sandbox_backup.json' >> /home/ubuntu/restore_sandbox.sh"
-            ssh ubuntu@$vmIP "echo 'tar -xzvf /home/ubuntu/sandbox_media_backup.tar.gz -C /home/ubuntu/production/static' >> /home/ubuntu/restore_sandbox.sh"
-            ssh ubuntu@$vmIP "chmod +x /home/ubuntu/restore_sandbox.sh"
-
-            # Run Restore Script
-            ssh ubuntu@$vmIP "/home/ubuntu/restore_sandbox.sh"
+            ssh ubuntu@$vmIP "python3 manage.py loaddata /home/ubuntu/sandbox_backup.json"
+            ssh ubuntu@$vmIP "tar -xzvf /home/ubuntu/sandbox_media_backup.tar.gz -C /home/ubuntu/production/static"
             Write-Host "✅ Sandbox modifications applied to Production!"
         }
     } else {
@@ -85,7 +69,11 @@ if ($deploymentMode -eq "sandbox") {
         terraform apply -auto-approve
     }
 
-    $vmIP = terraform output -raw vm_ip
     Write-Host "🌍 Production environment is live!"
-    Write-Host "Web Access: http://$vmIP"
+
+    # Send Email Notification (if provided)
+    if ($emailAddress -ne "") {
+        Write-Host "📩 Sending notification to $emailAddress"
+        ssh ubuntu@$vmIP "echo 'Production Deployment Completed' | mail -s 'Production Ready' $emailAddress"
+    }
 }

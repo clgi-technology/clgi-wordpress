@@ -47,6 +47,11 @@ variable "github_repo" {
   type        = string
 }
 
+variable "gcp_project" {
+  description = "GCP Project ID"
+  type        = string
+}
+
 variable "gcp_credentials_path" {
   description = "Path to GCP service account JSON"
   type        = string
@@ -62,7 +67,7 @@ provider "azurerm" {
 }
 
 provider "google" {
-  project     = "your-gcp-project-id"
+  project     = var.gcp_project
   region      = var.region
   credentials = file(var.gcp_credentials_path)
 }
@@ -89,8 +94,18 @@ resource "random_password" "wp_admin_password" {
   special = true
 }
 
+# Deploy an AWS EC2 Instance (example)
+resource "aws_instance" "main" {
+  ami           = "ami-0abcdef1234567890"  # Example AMI (change per region)
+  instance_type = var.vm_size
+  key_name      = tls_private_key.ssh_key.id
+  tags = {
+    Name = var.vm_name
+  }
+}
+
 output "vm_ip" {
-  value       = module.cloud.vm_ip
+  value       = aws_instance.main.public_ip
   description = "Public IP of the deployed instance"
 }
 
