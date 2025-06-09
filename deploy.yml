@@ -1,0 +1,53 @@
+name: Deploy WordPress Multisite with Terraform
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Apply Terraform configuration
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_cloud_provider: "aws" # Change to "gcp" or "azure" as needed
+          TF_VAR_vm_name: "wordpress-server"
+          TF_VAR_vm_size: "t3.medium"
+          TF_VAR_region: "us-east-1"
+          TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
+          TF_VAR_github_repo: "your-repo-name"
+
+      - name: Save VM IP
+        run: echo "VM_IP=$(terraform output vm_ip)" >> $GITHUB_ENV
+
+  deploy:
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ env.VM_IP }} << 'EOF'
+            cd /home/ubuntu/clgi-wordpress
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+            docker exec -it wordpress bash wp-cli-init.sh
+          EOF

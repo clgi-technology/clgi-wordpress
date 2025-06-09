@@ -1,0 +1,7 @@
+cloud_provider = "aws"
+vm_name       = "wordpress-server"
+vm_size       = "t2.medium"
+region        = "us-west-2"
+github_token  = "your-github-token"
+github_repo   = "your-repo-name"
+gcp_project   = "your-gcp-project-id"
