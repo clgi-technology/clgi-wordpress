@@ -72,26 +72,47 @@ provider "azurerm" {
   count = var.cloud_provider == "azure" ? 1 : 0
 }
 
-resource "tls_private_key" "ssh_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "aws_key_pair" "deployer" {
-  key_name   = "wordpress-key"
-  public_key = tls_private_key.ssh_key.public_key_openssh
-}
-
 resource "aws_instance" "main" {
   ami           = "ami-0abcdef1234567890"
   instance_type = var.vm_size
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = "wordpress-key"
   tags = {
     Name = var.vm_name
   }
 }
 
+resource "null_resource" "wordpress_setup" {
+  provisioner "remote-exec" {
+    inline = [
+      "echo \"[$(date)] 🔄 Installing WordPress...\" | tee -a /home/ubuntu/wordpress-setup.log",
+      "sudo apt update && sudo apt install -y apache2 php mysql-server",
+      "wget https://wordpress.org/latest.tar.gz",
+      "tar -xvf latest.tar.gz",
+      "sudo mv wordpress /var/www/html/",
+      "echo \"[$(date)] ✅ WordPress installed!\" | tee -a /home/ubuntu/wordpress-setup.log",
+      
+      "echo \"[$(date)] 🔄 Cloning CLGI Website...\" | tee -a /home/ubuntu/wordpress-setup.log",
+      "wget -r -np -nH --cut-dirs=1 -P /var/www/html/clgi_clone https://www.clgi.org",
+      "echo \"[$(date)] ✅ Site structure copied!\" | tee -a /home/ubuntu/wordpress-setup.log",
+      
+      "echo \"[$(date)] 🔄 Applying CLGI Theme...\" | tee -a /home/ubuntu/wordpress-setup.log",
+      "wget -P /var/www/html/wp-content/themes/ https://www.clgi.org/wp-content/themes/clgi-theme.zip",
+      "unzip /var/www/html/wp-content/themes/clgi-theme.zip -d /var/www/html/wp-content/themes/",
+      "echo \"[$(date)] ✅ Theme installed!\" | tee -a /home/ubuntu/wordpress-setup.log"
+    ]
+  }
+
+  connection {
+    type        = "ssh"
+    host        = aws_instance.main.public_ip
+    user        = "ubuntu"
+    private_key = file("${path.module}/ssh-key.pem")
+  }
+}
+
 resource "null_resource" "wordpress_health_check" {
+  depends_on = [null_resource.wordpress_setup]
+
   provisioner "remote-exec" {
     inline = [
       "echo \"[$(date)] 🔍 Starting health check for WordPress...\" | tee -a /home/ubuntu/wordpress-setup.log",
@@ -109,8 +130,9 @@ resource "null_resource" "wordpress_health_check" {
       "    sleep 5",
       "  fi",
       "done",
-      "echo \"[$(date)] ❌ WordPress failed health check!\" | tee -a /home/ubuntu/wordpress-setup.log",
-      "exit 1"
+      "echo \"[$(date)] ❌ WordPress failed health check! Running rollback...\" | tee -a /home/ubuntu/wordpress-setup.log",
+      "terraform destroy -auto-approve",
+      "terraform apply -auto-approve"
     ]
   }
 
@@ -118,20 +140,7 @@ resource "null_resource" "wordpress_health_check" {
     type        = "ssh"
     host        = aws_instance.main.public_ip
     user        = "ubuntu"
-    private_key = tls_private_key.ssh_key.private_key_pem
-  }
-}
-
-resource "null_resource" "rollback_on_failure" {
-  depends_on = [null_resource.wordpress_health_check]
-
-  provisioner "local-exec" {
-    command = "terraform destroy -auto-approve && terraform apply -auto-approve"
-  }
-
-  triggers = {
-    force_redeploy = timestamp(),
-    health_check_failed = fileexists("/home/ubuntu/wordpress-setup.log") && grep -q "❌" /home/ubuntu/wordpress-setup.log
+    private_key = file("${path.module}/ssh-key.pem")
   }
 }
 
@@ -140,7 +149,8 @@ output "vm_ip" {
   description = "Public IP of the deployed instance"
 }
 
-output "wordpress_health_status" {
-  value       = "Check logs at /home/ubuntu/wordpress-setup.log for health check results"
-  description = "Indicates whether WordPress is running"
+output "wp_admin_password" {
+  value       = "Generated password for WordPress Admin"
+  description = "WordPress Admin Password"
+  sensitive   = true
 }
