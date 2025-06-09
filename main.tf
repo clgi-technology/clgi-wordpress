@@ -4,15 +4,67 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 4.0"
-    }
   }
+}
+
+variable "aws_access_key" {
+  description = "AWS Access Key ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Access Key"
+  type        = string
+  sensitive   = true
+}
+
+provider "aws" {
+  region     = var.region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+}
+
+resource "aws_instance" "main" {
+  ami           = "ami-0abcdef1234567890"
+  instance_type = var.vm_size
+  key_name      = "wordpress-key"
+  tags = {
+    Name = var.vm_name
+  }
+}
+
+resource "null_resource" "wordpress_setup" {
+  provisioner "remote-exec" {
+    inline = [
+      "export AWS_ACCESS_KEY_ID='${var.aws_access_key}'",
+      "export AWS_SECRET_ACCESS_KEY='${var.aws_secret_key}'",
+      "echo \"🔄 Installing WordPress...\" | tee -a /home/ubuntu/wp-setup.log",
+      "sudo apt update && sudo apt install -y apache2 php mysql-server",
+      "wget https://wordpress.org/latest.tar.gz",
+      "tar -xvf latest.tar.gz",
+      "sudo mv wordpress /var/www/html/",
+      "echo \"✅ WordPress Installed!\" | tee -a /home/ubuntu/wp-setup.log"
+    ]
+  }
+
+  connection {
+    type        = "ssh"
+    host        = aws_instance.main.public_ip
+    user        = "ubuntu"
+    private_key = file("${path.module}/ssh-key.pem")
+  }
+}
+
+output "vm_ip" {
+  value       = aws_instance.main.public_ip
+  description = "Public IP of the deployed instance"
+}
+
+output "wp_admin_password" {
+  value       = "Generated password for WordPress Admin"
+  description = "WordPress Admin Password"
+  sensitive   = true
 }
 
 variable "environment" {
