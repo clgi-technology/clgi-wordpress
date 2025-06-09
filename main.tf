@@ -15,49 +15,57 @@ terraform {
   }
 }
 
-# Variables for cloud provider selection
+# Variables for cloud provider selection (Now references GitHub Secrets)
 variable "cloud_provider" {
   description = "The cloud provider to use (aws, gcp, azure)"
   type        = string
+  default     = "${var.TF_CLOUD_PROVIDER}"
 }
 
 variable "vm_name" {
   description = "The name of the VM"
   type        = string
+  default     = "${var.TF_VM_NAME}"
 }
 
 variable "vm_size" {
   description = "The size of the VM"
   type        = string
+  default     = "${var.TF_VM_SIZE}"
 }
 
 variable "region" {
   description = "The region to deploy the VM"
   type        = string
+  default     = "${var.TF_REGION}"
 }
 
 variable "github_token" {
   description = "GitHub Personal Access Token"
   type        = string
+  default     = "${var.GH_TOKEN}"
   sensitive   = true
 }
 
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
+  default     = "${var.GH_REPO}"
 }
 
 variable "gcp_project" {
   description = "GCP Project ID"
   type        = string
+  default     = "${var.TF_GCP_PROJECT}"
 }
 
 variable "gcp_credentials_path" {
   description = "Path to GCP service account JSON"
   type        = string
+  default     = "${var.TF_GCP_CREDENTIALS_PATH}"
 }
 
-# Providers setup
+# Providers setup (Now supports Multi-Cloud)
 provider "aws" {
   region = var.region
 }
@@ -94,7 +102,7 @@ resource "random_password" "wp_admin_password" {
   special = true
 }
 
-# Deploy an AWS EC2 Instance (example)
+# Deploy an AWS EC2 Instance (Example)
 resource "aws_instance" "main" {
   ami           = "ami-0abcdef1234567890"  # Example AMI (change per region)
   instance_type = var.vm_size

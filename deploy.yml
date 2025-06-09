@@ -24,14 +24,14 @@ jobs:
 
       - name: Apply Terraform Configuration
         run: |
-          terraform apply -auto-approve || (echo "⚠️ Terraform failed! Rolling back..." && terraform destroy -auto-approve)
+          terraform apply -auto-approve || (echo "⚠️ Terraform failed! Checking plan..." && terraform plan && terraform destroy -auto-approve)
         env:
           TF_VAR_cloud_provider: "aws"
-          TF_VAR_vm_name: "wordpress-server"
-          TF_VAR_vm_size: "t3.medium"
-          TF_VAR_region: "us-east-1"
-          TF_VAR_github_token: ${{ secrets.GITHUB_TOKEN }}
-          TF_VAR_github_repo: ${{ secrets.GITHUB_REPO }}
+          TF_VAR_vm_name: ${{ secrets.TF_VM_NAME }}
+          TF_VAR_vm_size: ${{ secrets.TF_VM_SIZE }}
+          TF_VAR_region: ${{ secrets.TF_REGION }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+          TF_VAR_github_repo: ${{ secrets.GH_REPO }}
 
       - name: Save VM IP
         run: echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
@@ -47,11 +47,12 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Fix SSH Key Permissions
-        run: chmod 600 ~/.ssh/id_rsa
+        run: chmod 600 ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ env.VM_IP }} << 'EOF'
+            set -e
             cd /home/ubuntu/clgi-wordpress
             git pull origin main
             docker-compose down || echo "⚠️ Docker failed! Rolling back..."
