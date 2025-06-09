@@ -1,61 +1,79 @@
-name: Deploy WordPress Multisite with Terraform
+name: Terraform Deployment
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    env:
+      TF_VAR_cloud_provider: ${{ secrets.TF_CLOUD_PROVIDER || 'aws' }}
+      TF_VAR_vm_name: ${{ secrets.TF_VM_NAME }}
+      TF_VAR_vm_size: ${{ secrets.TF_VM_SIZE }}
+      TF_VAR_region: ${{ secrets.TF_REGION }}
+      TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
+      TF_VAR_github_repo: ${{ secrets.GH_REPO }}
+      TF_VAR_gcp_project: ${{ secrets.TF_GCP_PROJECT }}
+      TF_VAR_gcp_credentials_path: ${{ secrets.TF_GCP_CREDENTIALS_PATH }}
+
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Terraform
+      - name: 🔧 Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Initialize Terraform
+      - name: 🔄 Initialize Terraform
         run: terraform init
 
-      - name: Validate Terraform Configuration
+      - name: ✅ Validate Terraform Configuration
         run: terraform validate
 
-      - name: Apply Terraform Configuration
+      - name: ⏳ Prompt for Deployment Choices
         run: |
-          terraform apply -auto-approve || (echo "⚠️ Terraform failed! Checking plan..." && terraform plan && terraform destroy -auto-approve)
-        env:
-          TF_VAR_cloud_provider: "aws"
-          TF_VAR_vm_name: ${{ secrets.TF_VM_NAME }}
-          TF_VAR_vm_size: ${{ secrets.TF_VM_SIZE }}
-          TF_VAR_region: ${{ secrets.TF_REGION }}
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN }}
-          TF_VAR_github_repo: ${{ secrets.GH_REPO }}
+          while true; do
+            read -p "Enter Environment (prod/sandbox): " env
+            if [[ "$env" == "prod" || "$env" == "sandbox" ]]; then
+              break
+            else
+              echo "❌ Invalid input! Please enter 'prod' or 'sandbox'."
+            fi
+          done
 
-      - name: Save VM IP
-        run: echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
+          while true; do
+            read -p "Enter Cloud Provider (aws/gcp/azure): " provider
+            if [[ "$provider" == "aws" || "$provider" == "gcp" || "$provider" == "azure" ]]; then
+              break
+            else
+              echo "❌ Invalid input! Please enter 'aws', 'gcp', or 'azure'."
+            fi
+          done
 
-  deploy:
-    needs: terraform
-    runs-on: ubuntu-latest
+          while true; do
+            read -p "Select Database (mysql/postgresql): " db
+            if [[ "$db" == "mysql" || "$db" == "postgresql" ]]; then
+              break
+            else
+              echo "❌ Invalid input! Please enter 'mysql' or 'postgresql'."
+            fi
+          done
 
-    steps:
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          while true; do
+            read -p "Choose VM Size (t3.medium/t3.large): " size
+            if [[ "$size" == "t3.medium" || "$size" == "t3.large" ]]; then
+              break
+            else
+              echo "❌ Invalid input! Please enter 't3.medium' or 't3.large'."
+            fi
+          done
 
-      - name: Fix SSH Key Permissions
-        run: chmod 600 ${{ secrets.SSH_PRIVATE_KEY }}
+          echo "✅ User Input Received: Environment=$env, Cloud Provider=$provider, Database=$db, VM Size=$size"
 
-      - name: Deploy to Server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ env.VM_IP }} << 'EOF'
-            set -e
-            cd /home/ubuntu/clgi-wordpress
-            git pull origin main
-            docker-compose down || echo "⚠️ Docker failed! Rolling back..."
-            docker-compose up -d --build
-            docker exec -it wordpress bash wp-cli-init.sh
-          EOF
+          echo "TF_VAR_environment=$env" >> $GITHUB_ENV
+          echo "TF_VAR_cloud_provider=$provider" >> $GITHUB_ENV
+          echo "TF_VAR_database_type=$db" >> $GITHUB_ENV
+          echo "TF_VAR_vm_size=$size" >> $GITHUB_ENV
+
+      - name: 🚀 Apply Terraform
+        run: terraform apply -auto-approve

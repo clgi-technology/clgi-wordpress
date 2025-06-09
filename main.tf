@@ -15,59 +15,61 @@ terraform {
   }
 }
 
+variable "environment" {
+  description = "Deployment environment (prod or sandbox)"
+  type        = string
+
+  validation {
+    condition     = contains(["prod", "sandbox"], var.environment)
+    error_message = "❌ Invalid environment! Choose either 'prod' or 'sandbox'."
+  }
+}
+
 variable "cloud_provider" {
   description = "The cloud provider to use (aws, gcp, azure)"
   type        = string
+
+  validation {
+    condition     = contains(["aws", "gcp", "azure"], var.cloud_provider)
+    error_message = "❌ Invalid cloud provider! Choose 'aws', 'gcp', or 'azure'."
+  }
 }
 
-variable "vm_name" {
-  description = "The name of the VM"
+variable "database_type" {
+  description = "Database selection (mysql or postgresql)"
   type        = string
+
+  validation {
+    condition     = contains(["mysql", "postgresql"], var.database_type)
+    error_message = "❌ Invalid database! Choose 'mysql' or 'postgresql'."
+  }
 }
 
 variable "vm_size" {
-  description = "The size of the VM"
+  description = "VM size selection (t3.medium or t3.large)"
   type        = string
-}
 
-variable "region" {
-  description = "The region to deploy the VM"
-  type        = string
-}
-
-variable "github_token" {
-  description = "GitHub Personal Access Token"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_repo" {
-  description = "GitHub repository name"
-  type        = string
-}
-
-variable "gcp_project" {
-  description = "GCP Project ID"
-  type        = string
-}
-
-variable "gcp_credentials_path" {
-  description = "Path to GCP service account JSON"
-  type        = string
+  validation {
+    condition     = contains(["t3.medium", "t3.large"], var.vm_size)
+    error_message = "❌ Invalid VM size! Choose 't3.medium' or 't3.large'."
+  }
 }
 
 provider "aws" {
   region = var.region
-}
-
-provider "azurerm" {
-  features {}
+  count  = var.cloud_provider == "aws" ? 1 : 0
 }
 
 provider "google" {
   project     = var.gcp_project
   region      = var.region
   credentials = file("${path.module}/gcp_credentials.json")
+  count       = var.cloud_provider == "gcp" ? 1 : 0
+}
+
+provider "azurerm" {
+  features {}
+  count = var.cloud_provider == "azure" ? 1 : 0
 }
 
 resource "tls_private_key" "ssh_key" {
