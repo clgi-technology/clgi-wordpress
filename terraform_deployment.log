@@ -1,0 +1,21 @@
+🌍 Multi-Cloud Deployment Setup
+Detected OS: windows
+Cloning into 'setup'...
+remote: Support for password authentication was removed on August 13, 2021.
+remote: Please see https://docs.github.com/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
+fatal: Authentication failed for 'https://github.com/your-repo/setup-scripts.git/'
+❌ GitHub authentication failed! Check your PAT in GitHub Secrets.
+🌍 Multi-Cloud Deployment Setup
+Detected OS: windows
+Cloning into 'setup'...
+remote: Support for password authentication was removed on August 13, 2021.
+remote: Please see https://docs.github.com/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
+fatal: Authentication failed for 'https://github.com/your-repo/setup-scripts.git/'
+❌ GitHub authentication failed! Check your PAT in GitHub Secrets.
+🌍 Multi-Cloud Deployment Setup
+Detected OS: windows
+Cloning into 'setup'...
+remote: Support for password authentication was removed on August 13, 2021.
+remote: Please see https://docs.github.com/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
+fatal: Authentication failed for 'https://github.com/your-repo/setup-scripts.git/'
+❌ GitHub authentication failed! Check your PAT in GitHub Secrets.
