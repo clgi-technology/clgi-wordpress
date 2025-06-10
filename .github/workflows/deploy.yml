@@ -16,6 +16,8 @@ jobs:
       TF_VAR_github_repo: ${{ secrets.GH_REPO }}
       TF_VAR_gcp_project: ${{ secrets.TF_GCP_PROJECT }}
       TF_VAR_gcp_credentials_path: ${{ secrets.TF_GCP_CREDENTIALS_PATH }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     steps:
       - name: 📥 Checkout Repository
@@ -30,50 +32,8 @@ jobs:
       - name: ✅ Validate Terraform Configuration
         run: terraform validate
 
-      - name: ⏳ Prompt for Deployment Choices
-        run: |
-          while true; do
-            read -p "Enter Environment (prod/sandbox): " env
-            if [[ "$env" == "prod" || "$env" == "sandbox" ]]; then
-              break
-            else
-              echo "❌ Invalid input! Please enter 'prod' or 'sandbox'."
-            fi
-          done
-
-          while true; do
-            read -p "Enter Cloud Provider (aws/gcp/azure): " provider
-            if [[ "$provider" == "aws" || "$provider" == "gcp" || "$provider" == "azure" ]]; then
-              break
-            else
-              echo "❌ Invalid input! Please enter 'aws', 'gcp', or 'azure'."
-            fi
-          done
-
-          while true; do
-            read -p "Select Database (mysql/postgresql): " db
-            if [[ "$db" == "mysql" || "$db" == "postgresql" ]]; then
-              break
-            else
-              echo "❌ Invalid input! Please enter 'mysql' or 'postgresql'."
-            fi
-          done
-
-          while true; do
-            read -p "Choose VM Size (t3.medium/t3.large): " size
-            if [[ "$size" == "t3.medium" || "$size" == "t3.large" ]]; then
-              break
-            else
-              echo "❌ Invalid input! Please enter 't3.medium' or 't3.large'."
-            fi
-          done
-
-          echo "✅ User Input Received: Environment=$env, Cloud Provider=$provider, Database=$db, VM Size=$size"
-
-          echo "TF_VAR_environment=$env" >> $GITHUB_ENV
-          echo "TF_VAR_cloud_provider=$provider" >> $GITHUB_ENV
-          echo "TF_VAR_database_type=$db" >> $GITHUB_ENV
-          echo "TF_VAR_vm_size=$size" >> $GITHUB_ENV
-
       - name: 🚀 Apply Terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: terraform apply -auto-approve
