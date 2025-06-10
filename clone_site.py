@@ -5,16 +5,26 @@ from urllib.parse import urljoin, urlparse
 import sys
 import time
 from datetime import datetime, timedelta
+from hashlib import md5
+from concurrent.futures import ThreadPoolExecutor
 
 # Get website URL
 website_url = sys.argv[1] if len(sys.argv) > 1 else "https://www.clgi.org"
 
-# Create Django-compatible static directory
-output_dir = "/home/ubuntu/sandbox/static"
-error_log_file = "error_log.txt"
+# Define directories
+base_dir = "/home/ubuntu/sandbox"
+output_dir = f"{base_dir}/static"
+log_dir = f"{base_dir}/logs"
+error_log_file = f"{log_dir}/error_log.txt"
 
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+# Ensure directories exist
+os.makedirs(output_dir, exist_ok=True)
+os.makedirs(log_dir, exist_ok=True)
+
+# Function to generate unique asset filenames
+def generate_unique_filename(url):
+    hash_value = md5(url.encode()).hexdigest()[:10]  # Unique hash prefix
+    return f"{hash_value}{os.path.splitext(urlparse(url).path)[-1]}"
 
 # Function to log errors with timestamps
 def log_error(message):
@@ -42,7 +52,8 @@ except requests.exceptions.RequestException as e:
 soup = BeautifulSoup(response.text, "html.parser")
 
 # Save HTML content
-with open(f"{output_dir}/index.html", "w", encoding="utf-8") as file:
+html_file_path = f"{output_dir}/index.html"
+with open(html_file_path, "w", encoding="utf-8") as file:
     file.write(soup.prettify())
 
 print("✅ Main HTML page saved!")
@@ -53,16 +64,17 @@ def download_asset(tag, attr, file_ext, retries=3):
     for asset in assets:
         if asset[attr].startswith("http") or asset[attr].startswith("/"):
             asset_url = urljoin(website_url, asset[attr])
-            parsed_url = urlparse(asset_url)
-            file_name = os.path.basename(parsed_url.path)
+            file_name = generate_unique_filename(asset_url)
 
             for attempt in range(retries):
                 try:
                     asset_response = requests.get(asset_url, timeout=10)
                     asset_response.raise_for_status()
                     asset_path = f"{output_dir}/{file_name}"
+
                     with open(asset_path, "wb") as asset_file:
                         asset_file.write(asset_response.content)
+
                     asset[attr] = f"/static/{file_name}"  # Update reference for Django
                     print(f"✅ Downloaded {file_ext}: {file_name}")
                     break  # Exit retry loop on success
@@ -74,13 +86,19 @@ def download_asset(tag, attr, file_ext, retries=3):
                         log_error(f"❌ Failed to download {file_ext}: {asset_url}, Error: {e}")
                         print(f"❌ Error downloading {file_ext}. Check {error_log_file} for details.")
 
-# Download CSS, images, and JavaScript files with retry logic
-download_asset("link", "href", "CSS")
-download_asset("img", "src", "Image")
-download_asset("script", "src", "JavaScript")
+# Multi-threaded asset download
+def download_assets_concurrently():
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        executor.map(lambda args: download_asset(*args), [
+            ("link", "href", "CSS"),
+            ("img", "src", "Image"),
+            ("script", "src", "JavaScript"),
+        ])
+
+download_assets_concurrently()
 
 # Save updated HTML with local references
-with open(f"{output_dir}/index.html", "w", encoding="utf-8") as file:
+with open(html_file_path, "w", encoding="utf-8") as file:
     file.write(soup.prettify())
 
 # Clean up old error logs

@@ -1,4 +1,11 @@
 terraform {
+  backend "s3" {
+    bucket         = "your-tf-state-bucket"
+    key            = "terraform.tfstate"
+    region         = var.region
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -7,11 +14,12 @@ terraform {
   }
 }
 
-variable "aws_access_key" {
-  description = "AWS Access Key ID"
-  type        = string
-  sensitive   = true
-}
+# AWS Credentials (Commented Out)
+#variable "aws_access_key" {
+#  description = "AWS Access Key ID"
+#  type        = string
+#  sensitive   = true
+#}
 
 variable "aws_secret_key" {
   description = "AWS Secret Access Key"
@@ -21,6 +29,23 @@ variable "aws_secret_key" {
 
 variable "ssh_password" {
   description = "SSH password for the remote user"
+  type        = string
+  sensitive   = true
+}
+
+variable "mysql_root_password" {
+  description = "Root password for MySQL database"
+  type        = string
+  sensitive   = true
+}
+
+variable "gcp_project" {
+  description = "Google Cloud Project"
+  type        = string
+}
+
+variable "github_token" {
+  description = "GitHub Token for authentication"
   type        = string
   sensitive   = true
 }
@@ -46,15 +71,15 @@ variable "vm_name" {
 }
 
 provider "aws" {
-  region     = var.region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  region = var.region
+  # access_key = var.aws_access_key
+  # secret_key = var.aws_secret_key
 }
 
 resource "aws_instance" "main" {
   ami           = "ami-0abcdef1234567890"
   instance_type = var.vm_size
-  key_name      = "wordpress-key" # Optional
+  key_name      = "wordpress-key"
 
   user_data = <<-EOF
               #!/bin/bash
@@ -73,6 +98,7 @@ resource "null_resource" "wordpress_setup" {
     inline = [
       "echo \"🔄 Installing WordPress...\" | tee -a /home/ubuntu/wp-setup.log",
       "sudo apt update && sudo apt install -y apache2 php mysql-server",
+      "sudo mysqladmin -u root password '${var.mysql_root_password}'",
       "wget https://wordpress.org/latest.tar.gz",
       "tar -xvf latest.tar.gz",
       "sudo mv wordpress /var/www/html/",
@@ -99,7 +125,7 @@ resource "null_resource" "wordpress_health_check" {
       "max_attempts=5",
 
       "while [ $attempts -lt $max_attempts ]; do",
-      "  HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost)",
+      "  HTTP_CODE=$(curl -s -o /dev/null -w \"%%{http_code}\" http://localhost)",
       "  echo \"[$(date)] HTTP Response: $HTTP_CODE\" | tee -a /home/ubuntu/wordpress-setup.log",
 
       "  if [ \"$HTTP_CODE\" == \"200\" ]; then",
