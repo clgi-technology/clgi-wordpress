@@ -98,18 +98,16 @@ resource "null_resource" "wordpress_health_check" {
       "attempts=0",
       "max_attempts=5",
 
-      # Define HTTP check command as a variable
       "while [ $attempts -lt $max_attempts ]; do",
-      "  export HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost)",
+      "  HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost)",
       "  echo \"[$(date)] HTTP Response: $HTTP_CODE\" | tee -a /home/ubuntu/wordpress-setup.log",
 
-      # Correct syntax to compare HTTP code
-      "  if [[ $HTTP_CODE -eq 200 ]]; then",
+      "  if [ \"$HTTP_CODE\" == \"200\" ]; then",
       "    echo \"[$(date)] ✅ WordPress is up and running!\" | tee -a /home/ubuntu/wordpress-setup.log",
       "    exit 0",
       "  else",
       "    echo \"[$(date)] ⚠️ WordPress not ready (HTTP $HTTP_CODE), retrying...\" | tee -a /home/ubuntu/wordpress-setup.log",
-      "    attempts=$(($attempts+1))",
+      "    ((attempts++))",
       "    sleep 5",
       "  fi",
       "done",
