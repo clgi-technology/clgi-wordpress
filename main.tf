@@ -52,6 +52,7 @@ resource "aws_key_pair" "key_pair" {
 # Security Group Module (AWS only for now)
 module "security_group" {
   source          = "./modules/security_group"
+  project_name    = var.project_name
   aws_region      = var.region
   vpc_id          = var.vpc_id
   ssh_ip_address  = var.ssh_ip_address
