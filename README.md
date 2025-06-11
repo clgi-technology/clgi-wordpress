@@ -55,3 +55,8 @@ This repository enables one-click deployment of a WordPress or Django site to AW
 
 ## 🗂️ File Structure
 
+scripts/
+├── install.sh                # Entry point
+├── install-wordpress.sh      # WordPress setup
+├── install-django.sh         # Django setup
+└── install-clgi.sh           # CLGI.org theme setup
