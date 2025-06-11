@@ -1,0 +1,40 @@
+#!/bin/bash
+# user_data.sh.tmpl - Startup script template for VM initialization
+
+echo "Starting VM initialization..."
+
+# Print deployment mode
+echo "Deployment Mode: ${deployment_mode}"
+
+# If deployment mode is sandbox, install Django environment
+if [ "${deployment_mode}" = "sandbox" ]; then
+  echo "Setting up sandbox environment (Django)..."
+  # Example installation commands for Django environment
+  sudo apt-get update -y
+  sudo apt-get install -y python3 python3-pip
+  pip3 install django
+fi
+
+# If deployment mode is production, install WordPress environment
+if [ "${deployment_mode}" = "production" ]; then
+  echo "Setting up production environment (WordPress)..."
+  # Example installation commands for WordPress environment
+  sudo apt-get update -y
+  sudo apt-get install -y apache2 php php-mysql mysql-server
+  # Additional WordPress setup commands here
+fi
+
+# Setup demo clone toggle
+if [ "${setup_demo_clone}" = "true" ]; then
+  echo "Cloning demo site from ${clone_target_url}..."
+  # Replace with actual clone commands, e.g. git clone or wget
+  # git clone ${clone_target_url} /var/www/html/demo-site
+fi
+
+# Set SSH password for the remote user
+if [ -n "${ssh_password}" ]; then
+  echo "Setting SSH password for user 'ubuntu'..."
+  echo "ubuntu:${ssh_password}" | sudo chpasswd
+fi
+
+echo "VM initialization complete."
