@@ -3,6 +3,11 @@ variable "ssh_ip_address" {
   type        = string
 }
 
+variable "project_name" {
+  description = "Name of the project to prefix resources"
+  type        = string
+}
+
 variable "vpc_id" {
   description = "The ID of the VPC where the security group will be created"
   type        = string
