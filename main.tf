@@ -15,7 +15,7 @@ terraform {
   }
 }
 
-# Providers
+# AWS Provider
 provider "aws" {
   region     = var.region
   access_key = var.aws_access_key
@@ -23,19 +23,21 @@ provider "aws" {
   token      = var.aws_session_token
 }
 
+# Google Cloud Provider
 provider "google" {
   credentials = var.gcp_key_file
-  project     = var.vm_name
+  project     = var.gcp_project
   region      = var.region
 }
 
+# Azure Provider
 provider "azurerm" {
   features {}
   client_id     = var.azure_client_id
   client_secret = var.azure_secret
 }
 
-# Shared Resources
+# Generate SSH Key (if needed)
 resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
@@ -47,6 +49,36 @@ resource "aws_key_pair" "key_pair" {
   public_key = tls_private_key.generated_key.public_key_openssh
 }
 
+# Security Group Module (AWS only for now)
+module "security_group" {
+  source          = "./modules/security_group"
+  project_name    = var.project_name
+  vpc_id          = var.vpc_id
+  ssh_ip_address  = var.ssh_ip_address
+}
+
+# --------------------
+# AWS Instance
+# --------------------
+resource "aws_instance" "vm" {
+  count         = var.cloud_provider == "AWS" ? 1 : 0
+  ami           = data.aws_ami.latest_ubuntu.id
+  instance_type = var.vm_size
+  key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
+  vpc_security_group_ids = [module.security_group.vm_sg_id]
+
+  user_data = templatefile("${path.module}/user_data.sh.tmpl", {
+    deployment_mode   = var.deployment_mode,
+    setup_demo_clone  = var.setup_demo_clone,
+    ssh_password      = var.ssh_password,
+    clone_target_url  = var.clone_target_url
+  })
+
+  tags = {
+    Name = var.vm_name
+  }
+}
+
 data "aws_ami" "latest_ubuntu" {
   most_recent = true
   owners      = ["amazon"]
@@ -56,30 +88,9 @@ data "aws_ami" "latest_ubuntu" {
   }
 }
 
-# AWS Instance
-resource "aws_instance" "vm" {
-  count         = var.cloud_provider == "AWS" ? 1 : 0
-  ami           = data.aws_ami.latest_ubuntu.id
-  instance_type = var.vm_size
-  key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_id        = var.use_existing_vpc ? var.existing_vpc_id : null
-
-  user_data = <<-EOF
-              #!/bin/bash
-              echo 'ubuntu:${var.ssh_password}' | chpasswd
-              sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-              systemctl restart sshd
-              export DEPLOYMENT_MODE="${var.deployment_mode}"
-              export SETUP_CLGI="${var.setup_demo_clone}"
-              curl -s https://your-bucket/install.sh | bash
-              EOF
-
-  tags = {
-    Name = var.vm_name
-  }
-}
-
+# --------------------
 # GCP Instance
+# --------------------
 resource "google_compute_instance" "vm" {
   count        = var.cloud_provider == "GCP" ? 1 : 0
   name         = var.vm_name
@@ -97,18 +108,17 @@ resource "google_compute_instance" "vm" {
     access_config {}
   }
 
-  metadata_startup_script = <<-EOF
-    #!/bin/bash
-    echo 'ubuntu:${var.ssh_password}' | chpasswd
-    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-    systemctl restart sshd
-    export DEPLOYMENT_MODE="${var.deployment_mode}"
-    export SETUP_CLGI="${var.setup_demo_clone}"
-    curl -s https://your-bucket/install.sh | bash
-  EOF
+  metadata_startup_script = templatefile("${path.module}/user_data.sh.tmpl", {
+    deployment_mode   = var.deployment_mode,
+    setup_demo_clone  = var.setup_demo_clone,
+    ssh_password      = var.ssh_password,
+    clone_target_url  = var.clone_target_url
+  })
 }
 
-# Azure Resources
+# --------------------
+# Azure Instance
+# --------------------
 resource "azurerm_resource_group" "rg" {
   count    = var.cloud_provider == "Azure" ? 1 : 0
   name     = "${var.vm_name}-rg"
@@ -179,15 +189,15 @@ resource "azurerm_linux_virtual_machine" "vm" {
     version   = "latest"
   }
 
-  custom_data = base64encode(<<-EOF
-    #!/bin/bash
-    export DEPLOYMENT_MODE="${var.deployment_mode}"
-    export SETUP_CLGI="${var.setup_demo_clone}"
-    curl -s https://your-bucket/install.sh | bash
-  EOF)
+  custom_data = base64encode(templatefile("${path.module}/user_data.sh.tmpl", {
+    deployment_mode   = var.deployment_mode,
+    setup_demo_clone  = var.setup_demo_clone,
+    ssh_password      = var.ssh_password,
+    clone_target_url  = var.clone_target_url
+  }))
 }
 
-# Output Public IP
+# Output IP
 output "vm_ip" {
   value = (
     var.cloud_provider == "AWS"   ? aws_instance.vm[0].public_ip :
@@ -200,6 +210,7 @@ output "vm_ip" {
 
 # Save SSH Key
 resource "local_file" "private_key" {
+  count           = var.use_existing_key_pair ? 0 : 1
   filename        = "${path.module}/generated-key.pem"
   content         = tls_private_key.generated_key.private_key_pem
   file_permission = "0600"
