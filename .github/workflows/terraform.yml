@@ -1,5 +1,14 @@
 name: Terraform Deployment
 
+# ⚠️ WARNING:
+# Before running this workflow, make sure to add the appropriate cloud provider credentials
+# as GitHub Secrets. These are required for Terraform to authenticate with your chosen platform.
+#
+# Required secrets by provider:
+# - AWS: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# - GCP: GCP_CREDENTIALS (JSON)
+# - Azure: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+
 on:
   workflow_dispatch:
     inputs:
