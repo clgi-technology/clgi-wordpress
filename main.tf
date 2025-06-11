@@ -22,7 +22,6 @@ provider "aws" {
 
 # Google Cloud Provider
 provider "google" {
-  credentials = var.gcp_key_file
   project     = var.gcp_project
   region      = var.region
 }
@@ -30,9 +29,7 @@ provider "google" {
 # Azure Provider
 provider "azurerm" {
   features {}
-  client_id     = var.azure_client_id
-  client_secret = var.azure_secret
-}
+  }
 
 # Generate SSH Key (if needed)
 resource "tls_private_key" "generated_key" {
