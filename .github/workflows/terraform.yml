@@ -1,40 +1,105 @@
-name: Terraform Deployment
-
-# ⚠️ WARNING:
-# Before running this workflow, make sure to add the appropriate cloud provider credentials
-# as GitHub Secrets. These are required for Terraform to authenticate with your chosen platform.
-#
-# Required secrets by provider:
-# - AWS: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-# - GCP: GCP_CREDENTIALS (JSON)
-# - Azure: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+name: Terraform Multi-Cloud Deployment
 
 on:
   workflow_dispatch:
     inputs:
-      ssh_ip_address:
-        description: 'CIDR block for SSH access (e.g., your IP address)'
+      cloud_provider:
+        description: "Choose Cloud Provider"
         required: true
-        type: string
+        type: choice
+        options: [AWS, GCP, Azure]
+        default: AWS
+
+      deployment_mode:
+        description: "Deployment mode (sandbox = Django, production = WordPress)"
+        required: true
+        type: choice
+        options: [sandbox, production]
+        default: sandbox
+
+      setup_demo_clone:
+        description: "Clone an existing site? (true/false)"
+        required: true
+        default: "false"
+
+      clone_url:
+        description: "URL of the site to clone (if applicable)"
+        required: false
+
+      vm_name:
+        description: "Name of the VM"
+        required: true
+        default: "clgi-deploy"
+
+      vm_size:
+        description: "VM size (AWS: t3.medium, GCP: e2-medium, Azure: Standard_B1s)"
+        required: true
+        default: "t3.medium"
+
+      region:
+        description: "Cloud region (e.g., us-west-2)"
+        required: true
+        default: "us-west-2"
+
+      ssh_allowed_cidr:
+        description: "CIDR allowed to SSH (e.g., your_ip/32)"
+        required: true
+        default: "0.0.0.0/0"
+
+      wait_before_continue:
+        description: "Wait 1 minute to double-check secrets setup?"
+        required: true
+        type: choice
+        options: [yes, no]
+        default: yes
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
 
+    env:
+      TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
+      TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
+      TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
+      TF_VAR_clone_url: ${{ github.event.inputs.clone_url }}
+      TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
+      TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
+      TF_VAR_region: ${{ github.event.inputs.region }}
+      TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
+
+      # Secrets
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
+      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
+
     steps:
-    - name: Show cloud credentials warning
-      run: echo "::warning::⚠️ Make sure cloud credentials are set in GitHub Secrets before running this workflow."
+      - name: 🚨 Reminder: Add Cloud Credentials to GitHub Secrets!
+        run: |
+          echo "::warning::⚠️ Make sure you've added all required cloud credentials as GitHub secrets before continuing!"
+          if [[ "${{ github.event.inputs.wait_before_continue }}" == "yes" ]]; then
+            echo "⏳ Waiting 60 seconds so you can double-check your GitHub secrets..."
+            sleep 60
+          else
+            echo "🚀 Proceeding without delay..."
+          fi
 
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v3
+      - name: 🧰 Set up Terraform
+        uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
-      run: terraform init
+      - name: ⚙️ Terraform Init
+        run: terraform init
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
-      env:
-        TF_VAR_ssh_ip_address: ${{ github.event.inputs.ssh_ip_address }}
+      - name: 🚀 Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: 🌐 Show Public IP
+        run: |
+          echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
+          echo "🌍 Your server is available at: http://$(terraform output -raw vm_ip)"
