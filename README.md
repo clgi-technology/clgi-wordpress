@@ -1,62 +1,62 @@
-# CLGI WordPress Multi-Cloud Deployment
+# Multi-Cloud Terraform VM Deployment
 
-## 📋 Project Overview
-This repository enables one-click deployment of a WordPress or Django site to AWS, GCP, or Azure using Terraform and GitHub Actions. It supports mobile-triggered deployments via the GitHub iOS app and includes an option to clone the layout of CLGI.org.
-
----
-
-## 🚀 Features
-- **Multi-cloud support**: AWS, GCP, and Azure
-- **Deployment modes**:
-  - `production`: WordPress
-  - `sandbox`: Django
-- **Optional CLGI.org clone**: Replicates the look of the CLGI website
-- **Mobile-friendly**: Trigger deployments from the GitHub mobile app
-- **Infrastructure reuse**: Use existing key pairs or VPCs
+This project deploys a virtual machine (VM) to AWS, GCP, or Azure with options for sandbox (Django) or production (WordPress) modes.
 
 ---
 
-## 📦 Prerequisites
-- GitHub account with access to this repository
-- AWS, GCP, or Azure account with credentials
-- GitHub Secrets configured:
-  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
-  - `GCP_KEY_FILE` (JSON string)
-  - `AZURE_CLIENT_ID`, `AZURE_SECRET`
-  - `SSH_PASSWORD`, `SSH_PRIVATE_KEY`
+## Features
+
+- Supports AWS, GCP, and Azure in one codebase
+- Dynamically selects VM types based on provider
+- Optionally reuse existing key pairs, VPCs, and subnets
+- Hardened security groups / firewall rules allowing SSH, HTTP, HTTPS only
+- User data template for setup, including demo cloning
+- GitHub Actions for CI/CD with workflow_dispatch inputs
+- Secrets managed via GitHub Secrets (no plaintext passwords)
+- Uses Terraform modules for clean code organization
 
 ---
 
-## ⚙️ Deployment Instructions
+## Getting Started
 
-### 1. Open GitHub (Web or Mobile)
-- Navigate to the **Actions** tab
-- Select **"Terraform Multi-Cloud Deployment"**
-- Click **"Run workflow"**
+### Prerequisites
 
-### 2. Fill in the Inputs
-- `cloud_provider`: AWS, GCP, or Azure
-- `deployment_mode`: `production` (WordPress) or `sandbox` (Django)
-- `setup_demo_clone`: `true` to clone CLGI.org layout
-- `use_existing_key_pair`: `true` or `false`
-- `existing_key_pair_name`: (if applicable)
-- `use_existing_vpc`: `true` or `false`
-- `existing_vpc_id`: (if applicable)
+- Terraform >= 1.0
+- GitHub repository with Secrets configured:
+  - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN (if needed)
+  - GCP_KEY_FILE (JSON content)
+  - AZURE_CLIENT_ID, AZURE_SECRET
+  - SSH_PASSWORD (for initial VM login)
+  - DB_PASSWORD (secure database password)
+  - OPTIONAL: EXISTING_KEY_PAIR_NAME, EXISTING_VPC_ID, EXISTING_SUBNET_ID
 
-### 3. Wait for Deployment
-- The workflow will provision a VM and install the selected stack
-- The public IP will be printed in the logs
+### Deployment
 
-### 4. Access Your Site
-- Open Safari or any browser
-- Visit `http://<public-ip>` to view your deployed site
+1. Fork or clone this repository
+2. Update your GitHub Secrets accordingly
+3. Go to the **Actions** tab
+4. Run the **Terraform Multi-Cloud Deployment** workflow manually
+5. Select options (cloud provider, deployment mode, VM size, region, etc.)
+6. Wait for deployment and check outputs for your VM IP
 
 ---
 
-## 🗂️ File Structure
+## Notes
 
-scripts/
-├── install.sh                # Entry point
-├── install-wordpress.sh      # WordPress setup
-├── install-django.sh         # Django setup
-└── install-clgi.sh           # CLGI.org theme setup
+- Existing resource reuse requires correct resource IDs/names in Secrets
+- VM setup installs your app with demo cloning if enabled
+- Security groups limit access to SSH, HTTP, and HTTPS ports only
+- User data script is loaded via a Terraform templatefile for flexibility
+- You can extend this project with HTTPS certs (e.g., Let's Encrypt) and monitoring
+
+---
+
+## Contributions
+
+Feel free to open issues or PRs for enhancements or bug fixes!
+
+---
+
+## License
+
+MIT License
