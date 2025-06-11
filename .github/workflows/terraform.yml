@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Pass these as TF_VAR_* to terraform regardless of provider
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
@@ -66,14 +67,7 @@ jobs:
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
-
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
-      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
-      TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
-      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
 
     steps:
       - name: Check Cloud Credentials Reminder
@@ -92,11 +86,37 @@ jobs:
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init
-        run: terraform init
+      # AWS Deployment
+      - name: Terraform Init and Apply - AWS
+        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+      # GCP Deployment
+      - name: Terraform Init and Apply - GCP
+        if: ${{ github.event.inputs.cloud_provider == 'GCP' }}
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GCP_KEY_FILE }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      # Azure Deployment
+      - name: Terraform Init and Apply - Azure
+        if: ${{ github.event.inputs.cloud_provider == 'Azure' }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
 
       - name: Show Public IP
         run: |
