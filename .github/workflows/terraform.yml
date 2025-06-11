@@ -1,0 +1,94 @@
+name: Terraform Multi-Cloud Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud_provider:
+        description: "Choose Cloud Provider (AWS, GCP, Azure)"
+        required: true
+        default: "AWS"
+      deployment_mode:
+        description: "Deployment Mode: sandbox (Django) or production (WordPress)"
+        required: true
+        default: "sandbox"
+      setup_demo_clone:
+        description: "Clone CLGI.org layout?"
+        required: false
+        default: "false"
+      use_existing_key_pair:
+        description: "Use existing key pair?"
+        required: false
+        default: "false"
+      existing_key_pair_name:
+        description: "Name of existing key pair (if applicable)"
+        required: false
+      use_existing_vpc:
+        description: "Use existing VPC?"
+        required: false
+        default: "false"
+      existing_vpc_id:
+        description: "Existing VPC ID (if applicable)"
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
+      TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
+      TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
+      TF_VAR_use_existing_key_pair: ${{ github.event.inputs.use_existing_key_pair }}
+      TF_VAR_existing_key_pair_name: ${{ github.event.inputs.existing_key_pair_name }}
+      TF_VAR_use_existing_vpc: ${{ github.event.inputs.use_existing_vpc }}
+      TF_VAR_existing_vpc_id: ${{ github.event.inputs.existing_vpc_id }}
+      TF_VAR_vm_name: "clgi-deploy"
+      TF_VAR_vm_size: "t3.medium"
+      TF_VAR_region: "us-west-2"
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
+      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: 🛠 Terraform Init
+        run: terraform init
+
+      - name: 🚀 Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: 🌐 Output Public IP
+        run: |
+          echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
+          echo "🌍 Access your site at: http://$(terraform output -raw vm_ip)"
+
+      - name: 🔐 Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: 🧩 Optional Post-Deploy Setup (Docker or Git Pull)
+        if: ${{ github.event.inputs.deployment_mode == 'production' }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ env.VM_IP }} << 'EOF'
+            sudo apt update
+            sudo apt install -y docker.io docker-compose git
+            git clone https://github.com/YOUR_ORG/clgi-wordpress.git || true
+            cd clgi-wordpress
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+          EOF
