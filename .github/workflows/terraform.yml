@@ -67,6 +67,7 @@ jobs:
       TF_VAR_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
 
+      # Cloud Secrets from GitHub
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
       TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -77,9 +78,11 @@ jobs:
 
     steps:
       - name: 🚨 Reminder: Add Cloud Credentials to GitHub Secrets!
+        env:
+          WAIT: ${{ github.event.inputs.wait_before_continue }}
         run: |
           echo "::warning::⚠️ Make sure you've added all required cloud credentials as GitHub secrets before continuing!"
-          if [ "${{ github.event.inputs.wait_before_continue }}" = "yes" ]; then
+          if [ "$WAIT" = "yes" ]; then
             echo "⏳ Waiting 60 seconds so you can double-check your GitHub secrets..."
             sleep 60
           else
@@ -89,7 +92,7 @@ jobs:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🧰 Set up Terraform
+      - name: 🧰 Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
       - name: ⚙️ Terraform Init
