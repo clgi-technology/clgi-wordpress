@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Show cloud credentials warning
+      run: echo "::warning::⚠️ Make sure cloud credentials are set in GitHub Secrets before running this workflow."
+
     - name: Checkout code
       uses: actions/checkout@v4
 
