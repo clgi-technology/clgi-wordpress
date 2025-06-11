@@ -1,0 +1,16 @@
+#!/bin/bash
+apt update -y
+apt install -y apache2 wget
+
+# Clean up default web root
+rm -rf /var/www/html/*
+
+# Download the static homepage from the target site
+wget --mirror --convert-links --adjust-extension --page-requisites --no-parent "${clone_url}" -P /var/www/html
+
+# Set proper permissions
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+
+# Restart Apache
+systemctl restart apache2
