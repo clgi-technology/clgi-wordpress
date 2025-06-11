@@ -8,8 +8,8 @@ variable "vpc_id" {
   type        = string
 }
 
-# Optional: Region if you're using it in your provider block
-# variable "aws_region" {
-#   description = "AWS region to deploy resources"
-#   type        = string
-# }
+Optional: Region if you're using it in your provider block
+variable "aws_region" {
+  description = "AWS region to deploy resources"
+  type        = string
+}
