@@ -1,91 +1,77 @@
 terraform {
-  backend "s3" {
-    bucket         = "your-tf-state-bucket"
-    key            = "terraform.tfstate"
-    region         = var.region
-    encrypt        = true
-  }
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
   }
 }
 
-# AWS Credentials (Commented Out)
-#variable "aws_access_key" {
-#  description = "AWS Access Key ID"
-#  type        = string
-#  sensitive   = true
-#}
-
-variable "aws_secret_key" {
-  description = "AWS Secret Access Key"
-  type        = string
-  sensitive   = true
-}
-
-variable "ssh_password" {
-  description = "SSH password for the remote user"
-  type        = string
-  sensitive   = true
-}
-
-variable "mysql_root_password" {
-  description = "Root password for MySQL database"
-  type        = string
-  sensitive   = true
-}
-
-variable "gcp_project" {
-  description = "Google Cloud Project"
-  type        = string
-}
-
-variable "github_token" {
-  description = "GitHub Token for authentication"
-  type        = string
-  sensitive   = true
-}
-
-variable "region" {
-  description = "AWS region"
-  type        = string
-}
-
-variable "vm_size" {
-  description = "VM size selection (t3.medium or t3.large)"
-  type        = string
-
-  validation {
-    condition     = contains(["t3.medium", "t3.large"], var.vm_size)
-    error_message = "❌ Invalid VM size! Choose 't3.medium' or 't3.large'."
-  }
-}
-
-variable "vm_name" {
-  description = "Name of the VM"
-  type        = string
-}
-
+# Providers
 provider "aws" {
-  region = var.region
-  # access_key = var.aws_access_key
-  # secret_key = var.aws_secret_key
+  region     = var.region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+  token      = var.aws_session_token
 }
 
-resource "aws_instance" "main" {
-  ami           = "ami-0abcdef1234567890"
+provider "google" {
+  credentials = var.gcp_key_file
+  project     = var.vm_name
+  region      = var.region
+}
+
+provider "azurerm" {
+  features {}
+  client_id     = var.azure_client_id
+  client_secret = var.azure_secret
+}
+
+# Shared Resources
+resource "tls_private_key" "generated_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "key_pair" {
+  count      = var.use_existing_key_pair ? 0 : 1
+  key_name   = "generated-key"
+  public_key = tls_private_key.generated_key.public_key_openssh
+}
+
+data "aws_ami" "latest_ubuntu" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+}
+
+# AWS Instance
+resource "aws_instance" "vm" {
+  count         = var.cloud_provider == "AWS" ? 1 : 0
+  ami           = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
-  key_name      = "wordpress-key"
+  key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
+  vpc_id        = var.use_existing_vpc ? var.existing_vpc_id : null
 
   user_data = <<-EOF
               #!/bin/bash
               echo 'ubuntu:${var.ssh_password}' | chpasswd
               sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
               systemctl restart sshd
+              export DEPLOYMENT_MODE="${var.deployment_mode}"
+              export SETUP_CLGI="${var.setup_demo_clone}"
+              curl -s https://your-bucket/install.sh | bash
               EOF
 
   tags = {
@@ -93,71 +79,128 @@ resource "aws_instance" "main" {
   }
 }
 
-resource "null_resource" "wordpress_setup" {
-  provisioner "remote-exec" {
-    inline = [
-      "echo \"🔄 Installing WordPress...\" | tee -a /home/ubuntu/wp-setup.log",
-      "sudo apt update && sudo apt install -y apache2 php mysql-server",
-      "sudo mysqladmin -u root password '${var.mysql_root_password}'",
-      "wget https://wordpress.org/latest.tar.gz",
-      "tar -xvf latest.tar.gz",
-      "sudo mv wordpress /var/www/html/",
-      "echo \"✅ WordPress Installed!\" | tee -a /home/ubuntu/wp-setup.log"
-    ]
+# GCP Instance
+resource "google_compute_instance" "vm" {
+  count        = var.cloud_provider == "GCP" ? 1 : 0
+  name         = var.vm_name
+  machine_type = var.vm_size
+  zone         = "${var.region}-a"
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2004-lts"
+    }
   }
 
-  connection {
-    type     = "ssh"
-    host     = aws_instance.main.public_ip
-    user     = "ubuntu"
-    password = var.ssh_password
-    timeout  = "2m"
+  network_interface {
+    network       = "default"
+    access_config {}
+  }
+
+  metadata_startup_script = <<-EOF
+    #!/bin/bash
+    echo 'ubuntu:${var.ssh_password}' | chpasswd
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    systemctl restart sshd
+    export DEPLOYMENT_MODE="${var.deployment_mode}"
+    export SETUP_CLGI="${var.setup_demo_clone}"
+    curl -s https://your-bucket/install.sh | bash
+  EOF
+}
+
+# Azure Resources
+resource "azurerm_resource_group" "rg" {
+  count    = var.cloud_provider == "Azure" ? 1 : 0
+  name     = "${var.vm_name}-rg"
+  location = var.region
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  count               = var.cloud_provider == "Azure" ? 1 : 0
+  name                = "${var.vm_name}-vnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = var.region
+  resource_group_name = azurerm_resource_group.rg[0].name
+}
+
+resource "azurerm_subnet" "subnet" {
+  count                = var.cloud_provider == "Azure" ? 1 : 0
+  name                 = "${var.vm_name}-subnet"
+  resource_group_name  = azurerm_resource_group.rg[0].name
+  virtual_network_name = azurerm_virtual_network.vnet[0].name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_public_ip" "public_ip" {
+  count               = var.cloud_provider == "Azure" ? 1 : 0
+  name                = "${var.vm_name}-ip"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.rg[0].name
+  allocation_method   = "Dynamic"
+}
+
+resource "azurerm_network_interface" "nic" {
+  count               = var.cloud_provider == "Azure" ? 1 : 0
+  name                = "${var.vm_name}-nic"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.rg[0].name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.subnet[0].id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.public_ip[0].id
   }
 }
 
-resource "null_resource" "wordpress_health_check" {
-  depends_on = [null_resource.wordpress_setup]
+resource "azurerm_linux_virtual_machine" "vm" {
+  count               = var.cloud_provider == "Azure" ? 1 : 0
+  name                = var.vm_name
+  resource_group_name = azurerm_resource_group.rg[0].name
+  location            = var.region
+  size                = var.vm_size
+  admin_username      = "ubuntu"
+  network_interface_ids = [
+    azurerm_network_interface.nic[0].id,
+  ]
 
-  provisioner "remote-exec" {
-    inline = [
-      "echo \"[$(date)] 🔍 Starting health check for WordPress...\" | tee -a /home/ubuntu/wordpress-setup.log",
-      "attempts=0",
-      "max_attempts=5",
+  admin_password = var.ssh_password
+  disable_password_authentication = false
 
-      "while [ $attempts -lt $max_attempts ]; do",
-      "  HTTP_CODE=$(curl -s -o /dev/null -w \"%%{http_code}\" http://localhost)",
-      "  echo \"[$(date)] HTTP Response: $HTTP_CODE\" | tee -a /home/ubuntu/wordpress-setup.log",
-
-      "  if [ \"$HTTP_CODE\" == \"200\" ]; then",
-      "    echo \"[$(date)] ✅ WordPress is up and running!\" | tee -a /home/ubuntu/wordpress-setup.log",
-      "    exit 0",
-      "  else",
-      "    echo \"[$(date)] ⚠️ WordPress not ready (HTTP $HTTP_CODE), retrying...\" | tee -a /home/ubuntu/wordpress-setup.log",
-      "    ((attempts++))",
-      "    sleep 5",
-      "  fi",
-      "done",
-
-      "echo \"[$(date)] ❌ WordPress failed health check!\" | tee -a /home/ubuntu/wordpress-setup.log"
-    ]
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
 
-  connection {
-    type     = "ssh"
-    host     = aws_instance.main.public_ip
-    user     = "ubuntu"
-    password = var.ssh_password
-    timeout  = "2m"
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "20_04-lts"
+    version   = "latest"
   }
+
+  custom_data = base64encode(<<-EOF
+    #!/bin/bash
+    export DEPLOYMENT_MODE="${var.deployment_mode}"
+    export SETUP_CLGI="${var.setup_demo_clone}"
+    curl -s https://your-bucket/install.sh | bash
+  EOF)
 }
 
+# Output Public IP
 output "vm_ip" {
-  value       = aws_instance.main.public_ip
+  value = (
+    var.cloud_provider == "AWS"   ? aws_instance.vm[0].public_ip :
+    var.cloud_provider == "GCP"   ? google_compute_instance.vm[0].network_interface[0].access_config[0].nat_ip :
+    var.cloud_provider == "Azure" ? azurerm_public_ip.public_ip[0].ip_address :
+    null
+  )
   description = "Public IP of the deployed instance"
 }
 
-output "wp_admin_password" {
-  value       = "Generated password for WordPress Admin"
-  description = "WordPress Admin Password"
-  sensitive   = true
+# Save SSH Key
+resource "local_file" "private_key" {
+  filename        = "${path.module}/generated-key.pem"
+  content         = tls_private_key.generated_key.private_key_pem
+  file_permission = "0600"
 }
