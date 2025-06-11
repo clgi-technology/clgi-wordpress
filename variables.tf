@@ -103,6 +103,12 @@ variable "vpc_id" {
   default     = ""
 }
 
+variable "project_name" {
+  description = "Name of the project to prefix resources"
+  type        = string
+  default     = "my-project"  # optional default or remove if you want to provide explicitly
+}
+
 variable "ssh_ip_address" {
   description = "Your public IP address/CIDR to allow SSH (e.g., 203.0.113.0/32)"
   type        = string
