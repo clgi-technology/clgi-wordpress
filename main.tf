@@ -16,23 +16,24 @@ terraform {
   required_version = ">= 1.3.0"
 }
 
-# Conditional AWS Provider
+# AWS Provider with alias "aws" - configured only when AWS is selected
 provider "aws" {
-  alias  = "default"
+  alias  = "aws"
   region = var.region
 
-  access_key = var.cloud_provider == "AWS" ? var.aws_access_key : null
-  secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : null
-  token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
+  # Set credentials only if AWS is selected
+  access_key = var.cloud_provider == "AWS" ? var.aws_access_key : ""
+  secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : ""
+  token      = var.cloud_provider == "AWS" ? var.aws_session_token : ""
 
   skip_credentials_validation = var.cloud_provider != "AWS"
   skip_requesting_account_id  = var.cloud_provider != "AWS"
 }
 
-# Conditional GCP Provider
+# GCP Provider with alias "google" - configured only when GCP is selected
 provider "google" {
-  alias       = "default"
-  credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
+  alias       = "google"
+  credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : ""
   project     = var.gcp_project
   region      = var.region
 
@@ -40,15 +41,15 @@ provider "google" {
   skip_requesting_account_id  = var.cloud_provider != "GCP"
 }
 
-# Conditional Azure Provider
+# Azure Provider with alias "azurerm" - configured only when Azure is selected
 provider "azurerm" {
-  alias           = "default"
+  alias           = "azurerm"
   features        = {}
 
-  client_id       = var.cloud_provider == "Azure" ? var.azure_client_id : null
-  client_secret   = var.cloud_provider == "Azure" ? var.azure_secret : null
-  tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : null
-  subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
+  client_id       = var.cloud_provider == "Azure" ? var.azure_client_id : ""
+  client_secret   = var.cloud_provider == "Azure" ? var.azure_secret : ""
+  tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : ""
+  subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : ""
 
   skip_credentials_validation = var.cloud_provider != "Azure"
   skip_provider_registration  = var.cloud_provider != "Azure"
@@ -74,10 +75,9 @@ module "security_group" {
   ssh_ip_address  = var.ssh_ip_address
 
   providers = {
-    aws = aws.default
+    aws = aws.aws
   }
 }
-
 
 # AWS Instance
 resource "aws_instance" "vm" {
@@ -97,6 +97,10 @@ resource "aws_instance" "vm" {
   tags = {
     Name = var.vm_name
   }
+
+  providers = {
+    aws = aws.aws
+  }
 }
 
 data "aws_ami" "latest_ubuntu" {
@@ -106,6 +110,10 @@ data "aws_ami" "latest_ubuntu" {
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  providers = {
+    aws = aws.aws
   }
 }
 
@@ -133,6 +141,10 @@ resource "google_compute_instance" "vm" {
     ssh_password      = var.ssh_password,
     clone_target_url  = var.clone_target_url
   })
+
+  providers = {
+    google = google.google
+  }
 }
 
 # Azure Resources
@@ -140,6 +152,10 @@ resource "azurerm_resource_group" "rg" {
   count    = var.cloud_provider == "Azure" ? 1 : 0
   name     = "${var.vm_name}-rg"
   location = var.region
+
+  providers = {
+    azurerm = azurerm.azurerm
+  }
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -148,6 +164,10 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = var.region
   resource_group_name = azurerm_resource_group.rg[0].name
+
+  providers = {
+    azurerm = azurerm.azurerm
+  }
 }
 
 resource "azurerm_subnet" "subnet" {
@@ -156,6 +176,10 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg[0].name
   virtual_network_name = azurerm_virtual_network.vnet[0].name
   address_prefixes     = ["10.0.1.0/24"]
+
+  providers = {
+    azurerm = azurerm.azurerm
+  }
 }
 
 resource "azurerm_public_ip" "public_ip" {
@@ -164,6 +188,10 @@ resource "azurerm_public_ip" "public_ip" {
   location            = var.region
   resource_group_name = azurerm_resource_group.rg[0].name
   allocation_method   = "Dynamic"
+
+  providers = {
+    azurerm = azurerm.azurerm
+  }
 }
 
 resource "azurerm_network_interface" "nic" {
@@ -177,6 +205,10 @@ resource "azurerm_network_interface" "nic" {
     subnet_id                     = azurerm_subnet.subnet[0].id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.public_ip[0].id
+  }
+
+  providers = {
+    azurerm = azurerm.azurerm
   }
 }
 
@@ -212,6 +244,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
     ssh_password      = var.ssh_password,
     clone_target_url  = var.clone_target_url
   }))
+
+  providers = {
+    azurerm = azurerm.azurerm
+  }
 }
 
 # Output IP
@@ -232,3 +268,4 @@ resource "local_file" "private_key" {
   content         = tls_private_key.generated_key.private_key_pem
   file_permission = "0600"
 }
+
