@@ -15,6 +15,92 @@ terraform {
   }
 }
 
+variable "cloud_provider" {
+  type        = string
+  description = "Cloud provider to deploy (AWS, GCP, Azure)"
+}
+
+variable "region" {
+  type = string
+}
+
+# AWS variables
+variable "aws_access_key" {
+  type    = string
+  default = ""
+}
+variable "aws_secret_key" {
+  type    = string
+  default = ""
+}
+variable "aws_session_token" {
+  type    = string
+  default = ""
+}
+
+# GCP variables
+variable "gcp_key_file" {
+  type    = string
+  default = ""
+}
+variable "gcp_project" {
+  type    = string
+  default = ""
+}
+
+# Azure variables
+variable "azure_client_id" {
+  type    = string
+  default = ""
+}
+variable "azure_secret" {
+  type    = string
+  default = ""
+}
+variable "azure_tenant_id" {
+  type    = string
+  default = ""
+}
+variable "azure_subscription_id" {
+  type    = string
+  default = ""
+}
+
+provider "aws" {
+  alias  = "default"
+  region = var.region
+
+  access_key = var.cloud_provider == "AWS" ? var.aws_access_key : null
+  secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : null
+  token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
+
+  skip_credentials_validation = var.cloud_provider != "AWS"
+  skip_requesting_account_id  = var.cloud_provider != "AWS"
+}
+
+provider "google" {
+  alias       = "default"
+  credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
+  project     = var.gcp_project
+  region      = var.region
+
+  skip_credentials_validation = var.cloud_provider != "GCP"
+  skip_requesting_account_id  = var.cloud_provider != "GCP"
+}
+
+provider "azurerm" {
+  alias           = "default"
+  features        = {}
+
+  client_id       = var.cloud_provider == "Azure" ? var.azure_client_id : null
+  client_secret   = var.cloud_provider == "Azure" ? var.azure_secret : null
+  tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : null
+  subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
+
+  skip_credentials_validation = var.cloud_provider != "Azure"
+  skip_provider_registration  = var.cloud_provider != "Azure"
+}
+
 # AWS Provider
 provider "aws" {
   region     = var.region
