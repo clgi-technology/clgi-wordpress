@@ -80,8 +80,8 @@ resource "tls_private_key" "generated_key" {
   rsa_bits  = 4096
 }
 
-# Generate the public key associated with the private key
-resource "tls_public_key" "generated_key" {
+# Generate the public key associated with the private key (use data instead of resource)
+data "tls_public_key" "generated_key" {
   depends_on = [tls_private_key.generated_key]  # Ensure the private key is generated before creating the public key
 
   private_key_pem = tls_private_key.generated_key.private_key_pem
@@ -91,9 +91,8 @@ resource "tls_public_key" "generated_key" {
 resource "aws_key_pair" "key_pair" {
   count   = var.use_existing_key_pair ? 0 : 1
   key_name = "generated-key"
-  public_key = tls_public_key.generated_key.public_key
+  public_key = data.tls_public_key.generated_key.public_key
 }
-
 
 resource "aws_security_group" "default" {
   count = var.vpc_id == "" ? 1 : 0  # Only create the security group if VPC is created
