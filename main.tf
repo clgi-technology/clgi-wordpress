@@ -74,6 +74,13 @@ resource "aws_subnet" "default" {
   }
 }
 
+# Generate a new SSH Key Pair (if not using existing)
+resource "aws_key_pair" "key_pair" {
+  count   = var.use_existing_key_pair ? 0 : 1
+  key_name = "generated-key"
+  public_key = tls_public_key.generated_key.public_key
+}
+
 resource "aws_security_group" "default" {
   count = var.vpc_id == "" ? 1 : 0  # Only create the security group if VPC is created
 
@@ -97,13 +104,12 @@ resource "aws_security_group" "default" {
   }
 }
  
-# AWS Instance Creation (use correct VPC security group)
 resource "aws_instance" "vm" {
   count = var.cloud_provider == "AWS" ? 1 : 0
   ami   = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
   key_name = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_security_group_ids = [aws_security_group.default.id]
+  vpc_security_group_ids = [aws_security_group.default[count.index].id]  # Accessing SG with count.index
 
   user_data = templatefile("${path.module}/user_data.sh.tmpl", {
     deployment_mode   = var.deployment_mode,
@@ -118,6 +124,7 @@ resource "aws_instance" "vm" {
 
   provider = aws.aws
 }
+
 
 # AWS AMI lookup for Ubuntu 20.04 (latest)
 data "aws_ami" "latest_ubuntu" {
@@ -147,7 +154,6 @@ resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
 }
-
 
 # OUTPUT: Private key if generated
 resource "local_file" "private_key" {
