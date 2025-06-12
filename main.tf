@@ -1,6 +1,6 @@
 # AWS VPC (only create if vpc_id is not provided)
 resource "aws_vpc" "default" {
-  count             = var.vpc_id == "" ? 1 : 0
+  count             = var.vpc_id == "" ? 1 : 0  # Create a new VPC if vpc_id is empty
   cidr_block        = "10.0.0.0/16"
   enable_dns_support = true
   enable_dns_hostnames = true
@@ -12,9 +12,9 @@ resource "aws_vpc" "default" {
 
 # AWS Subnet (only create if vpc_id is not provided)
 resource "aws_subnet" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if VPC is created
+  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if no existing VPC ID is provided
 
-  vpc_id = aws_vpc.default.id  # Reference the new VPC if it is created
+  vpc_id = aws_vpc.default.id  # Reference the newly created VPC
   cidr_block = "10.0.1.0/24"
   availability_zone = "${var.region}a"
   map_public_ip_on_launch = true
@@ -22,13 +22,15 @@ resource "aws_subnet" "default" {
   tags = {
     Name = "default-subnet"
   }
+
+  depends_on = [aws_vpc.default]  # Ensure VPC is created before subnet
 }
 
 # AWS Security Group (only create if vpc_id is not provided)
 resource "aws_security_group" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Create if no VPC ID is provided or a new VPC is created
+  count = var.vpc_id == "" ? 1 : 0  # Only create security group if no existing VPC ID is provided
 
-  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default.id  # Use provided VPC ID or new one
+  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default.id  # Use existing VPC ID or new one
   name   = "default-sg"
   description = "Default security group"
 
@@ -45,9 +47,11 @@ resource "aws_security_group" "default" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  depends_on = [aws_vpc.default]  # Ensure VPC is created before security group if needed
 }
 
-# AWS Instance Creation (make sure to use the correct VPC security group)
+# AWS Instance Creation (use correct VPC security group)
 resource "aws_instance" "vm" {
   count = var.cloud_provider == "AWS" ? 1 : 0
   ami   = data.aws_ami.latest_ubuntu.id
@@ -69,6 +73,7 @@ resource "aws_instance" "vm" {
   provider = aws.aws
 }
 
+# AWS AMI lookup for Ubuntu 20.04 (latest)
 data "aws_ami" "latest_ubuntu" {
   most_recent = true
   owners      = ["amazon"]
@@ -81,126 +86,7 @@ data "aws_ami" "latest_ubuntu" {
   provider = aws.aws
 }
 
-# GCP Instance
-resource "google_compute_instance" "vm" {
-  count        = var.cloud_provider == "GCP" ? 1 : 0
-  name         = var.vm_name
-  machine_type = var.vm_size
-  zone         = "${var.region}-a"
-
-  boot_disk {
-    initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2004-lts"
-    }
-  }
-
-  network_interface {
-    network       = "default"
-    access_config {}
-  }
-
-  metadata_startup_script = templatefile("${path.module}/user_data.sh.tmpl", {
-    deployment_mode   = var.deployment_mode,
-    setup_demo_clone  = var.setup_demo_clone,
-    ssh_password      = var.ssh_password,
-    clone_target_url  = var.clone_target_url
-  })
-
-  provider = google.google
-}
-
-# Azure Resources
-resource "azurerm_resource_group" "rg" {
-  count    = var.cloud_provider == "Azure" ? 1 : 0
-  name     = "${var.vm_name}-rg"
-  location = var.region
-
-  provider = azurerm.azurerm
-}
-
-resource "azurerm_virtual_network" "vnet" {
-  count               = var.cloud_provider == "Azure" ? 1 : 0
-  name                = "${var.vm_name}-vnet"
-  address_space       = ["10.0.0.0/16"]
-  location            = var.region
-  resource_group_name = azurerm_resource_group.rg[0].name
-
-  provider = azurerm.azurerm
-}
-
-resource "azurerm_subnet" "subnet" {
-  count                = var.cloud_provider == "Azure" ? 1 : 0
-  name                 = "${var.vm_name}-subnet"
-  resource_group_name  = azurerm_resource_group.rg[0].name
-  virtual_network_name = azurerm_virtual_network.vnet[0].name
-  address_prefixes     = ["10.0.1.0/24"]
-
-  provider = azurerm.azurerm
-}
-
-resource "azurerm_public_ip" "public_ip" {
-  count               = var.cloud_provider == "Azure" ? 1 : 0
-  name                = "${var.vm_name}-ip"
-  location            = var.region
-  resource_group_name = azurerm_resource_group.rg[0].name
-  allocation_method   = "Dynamic"
-
-  provider = azurerm.azurerm
-}
-
-resource "azurerm_network_interface" "nic" {
-  count               = var.cloud_provider == "Azure" ? 1 : 0
-  name                = "${var.vm_name}-nic"
-  location            = var.region
-  resource_group_name = azurerm_resource_group.rg[0].name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.subnet[0].id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.public_ip[0].id
-  }
-
-  provider = azurerm.azurerm
-}
-
-resource "azurerm_linux_virtual_machine" "vm" {
-  count               = var.cloud_provider == "Azure" ? 1 : 0
-  name                = var.vm_name
-  resource_group_name = azurerm_resource_group.rg[0].name
-  location            = var.region
-  size                = var.vm_size
-  admin_username      = "ubuntu"
-  network_interface_ids = [
-    azurerm_network_interface.nic[0].id,
-  ]
-
-  admin_password = var.ssh_password
-  disable_password_authentication = false
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "20_04-lts"
-    version   = "latest"
-  }
-
-  custom_data = base64encode(templatefile("${path.module}/user_data.sh.tmpl", {
-    deployment_mode   = var.deployment_mode,
-    setup_demo_clone  = var.setup_demo_clone,
-    ssh_password      = var.ssh_password,
-    clone_target_url  = var.clone_target_url
-  }))
-
-  provider = azurerm.azurerm
-}
-
-# Output IP
+# OUTPUT: Public IP
 output "vm_ip" {
   value = (
     var.cloud_provider == "AWS"   ? aws_instance.vm[0].public_ip :
@@ -211,7 +97,7 @@ output "vm_ip" {
   description = "Public IP of the deployed instance"
 }
 
-# Output private key if generated
+# OUTPUT: Private key if generated
 resource "local_file" "private_key" {
   count           = var.use_existing_key_pair ? 0 : 1
   filename        = "${path.module}/generated-key.pem"
