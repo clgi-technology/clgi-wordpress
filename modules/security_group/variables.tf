@@ -1,61 +1,16 @@
-# AWS related variables
-variable "aws_access_key" {
-  description = "The AWS access key for authentication"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_secret_key" {
-  description = "The AWS secret key for authentication"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_session_token" {
-  description = "The AWS session token (if using temporary credentials)"
-  type        = string
-  sensitive   = true
-}
-
-# GCP related variables
-variable "gcp_key_file" {
-  description = "Path to the Google Cloud service account JSON key file"
-  type        = string
-  sensitive   = true
-}
-
-variable "gcp_project" {
-  description = "The project ID in GCP"
+variable "cloud_provider" {
+  description = "Cloud provider to use (AWS, GCP, or Azure)"
   type        = string
 }
 
-# Azure related variables
-variable "azure_client_id" {
-  description = "The Azure client ID (application ID)"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_secret" {
-  description = "The Azure client secret (application secret)"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_tenant_id" {
-  description = "The Azure tenant ID"
+variable "deployment_mode" {
+  description = "Deployment mode (sandbox or production)"
   type        = string
 }
 
-variable "azure_subscription_id" {
-  description = "The Azure subscription ID"
-  type        = string
-}
-
-# General configuration variables
-variable "region" {
-  description = "The region to deploy resources"
-  type        = string
+variable "setup_demo_clone" {
+  description = "Whether to setup demo clone"
+  type        = bool
 }
 
 variable "vm_name" {
@@ -68,47 +23,79 @@ variable "vm_size" {
   type        = string
 }
 
-variable "deployment_mode" {
-  description = "Deployment mode for resources"
-  type        = string
-}
-
-variable "ssh_password" {
-  description = "Password for SSH authentication"
-  type        = string
-}
-
-variable "setup_demo_clone" {
-  description = "Whether to set up a demo clone"
-  type        = bool
-}
-
-variable "clone_target_url" {
-  description = "URL for cloning demo application"
-  type        = string
-}
-
-variable "use_existing_key_pair" {
-  description = "Flag to use an existing key pair for SSH"
-  type        = bool
-}
-
-variable "existing_key_pair_name" {
-  description = "The name of the existing SSH key pair"
-  type        = string
-}
-
-variable "project_name" {
-  description = "Name of the project to prefix resources"
-  type        = string
-}
-
-variable "vpc_id" {
-  description = "The ID of the VPC where the security group will be created"
+variable "region" {
+  description = "The cloud region"
   type        = string
 }
 
 variable "ssh_ip_address" {
-  description = "CIDR block to allow SSH access (e.g. 203.0.113.0/32)"
+  description = "The allowed IP address for SSH access"
+  type        = string
+}
+
+variable "clone_target_url" {
+  description = "The URL for the clone target (if applicable)"
+  type        = string
+  default     = ""
+}
+
+variable "ssh_password" {
+  description = "SSH password for authentication"
+  type        = string
+}
+
+variable "aws_access_key" {
+  description = "AWS Access Key"
+  type        = string
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Key"
+  type        = string
+}
+
+variable "aws_session_token" {
+  description = "AWS Session Token"
+  type        = string
+  default     = ""
+}
+
+variable "gcp_project" {
+  description = "GCP Project ID"
+  type        = string
+}
+
+variable "gcp_key_file" {
+  description = "Path to GCP key file"
+  type        = string
+}
+
+variable "azure_client_id" {
+  description = "Azure Client ID"
+  type        = string
+}
+
+variable "azure_secret" {
+  description = "Azure Client Secret"
+  type        = string
+}
+
+variable "azure_tenant_id" {
+  description = "Azure Tenant ID"
+  type        = string
+}
+
+variable "azure_subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+}
+
+variable "smtp_password" {
+  description = "SMTP password"
   type        = string
 }
