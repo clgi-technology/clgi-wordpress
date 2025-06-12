@@ -107,8 +107,13 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
           echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
 
-      - name: Test AWS Identity
-        run: aws sts get-caller-identity
+      - name: Verify AWS credentials
+        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
+        run: |
+          if ! aws sts get-caller-identity; then
+            echo "AWS credentials are invalid or expired"
+            exit 1
+          fi
 
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
