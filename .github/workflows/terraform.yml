@@ -107,6 +107,9 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
           echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
 
+      - name: Test AWS Identity
+        run: aws sts get-caller-identity
+
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
