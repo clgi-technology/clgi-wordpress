@@ -6,7 +6,7 @@ setup_demo_clone      = false            # true = static clone from URL, false =
 # VM Configuration
 vm_name               = "wordpress-server"
 vm_size               = "t3.medium"
-region                = "us-east-2"
+region                = "us-west-2"
 
 
 # Networking
