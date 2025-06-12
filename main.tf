@@ -1,3 +1,4 @@
+# Terraform block with required providers
 terraform {
   required_providers {
     aws = {
@@ -16,31 +17,24 @@ terraform {
   required_version = ">= 1.3.0"
 }
 
-# Conditional AWS Provider
+# AWS provider configuration
 provider "aws" {
   alias  = "aws"
   region = var.region
-
   access_key = var.cloud_provider == "AWS" ? var.aws_access_key : null
   secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : null
   token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
-
-  skip_credentials_validation = var.cloud_provider != "AWS"
-  skip_requesting_account_id  = var.cloud_provider != "AWS"
 }
 
-# Conditional GCP Provider
+# GCP provider configuration (remove unsupported options)
 provider "google" {
   alias       = "google"
   credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
   project     = var.gcp_project
   region      = var.region
-
-  skip_credentials_validation = var.cloud_provider != "GCP"
-  skip_requesting_account_id  = var.cloud_provider != "GCP"
 }
 
-# Conditional Azure Provider
+# Azure provider configuration (remove unsupported options)
 provider "azurerm" {
   alias           = "azurerm"
   features        = {}
@@ -49,23 +43,9 @@ provider "azurerm" {
   client_secret   = var.cloud_provider == "Azure" ? var.azure_secret : null
   tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : null
   subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
-
-  skip_credentials_validation = var.cloud_provider != "Azure"
-  skip_provider_registration  = var.cloud_provider != "Azure"
 }
 
-# Generate SSH Key (if needed)
-resource "tls_private_key" "generated_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "aws_key_pair" "key_pair" {
-  count      = var.use_existing_key_pair ? 0 : 1
-  key_name   = "generated-key"
-  public_key = tls_private_key.generated_key.public_key_openssh
-}
-
+# Security Group Module (fix provider reference)
 module "security_group" {
   count           = var.cloud_provider == "AWS" ? 1 : 0
   source          = "./modules/security_group"
