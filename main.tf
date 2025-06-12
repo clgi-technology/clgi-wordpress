@@ -1,4 +1,6 @@
-required_providers {
+# Terraform block with required providers and version constraint
+terraform {
+  required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
@@ -12,6 +14,7 @@ required_providers {
       version = "~> 3.0"
     }
   }
+
   required_version = ">= 1.3.0"
 }
 
@@ -42,6 +45,9 @@ provider "azurerm" {
   tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : null
   subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
 }
+
+# Your other resource definitions (e.g., VPC, subnet, instance) go here...
+
 
 # AWS VPC (only create if vpc_id is not provided)
 resource "aws_vpc" "default" {
