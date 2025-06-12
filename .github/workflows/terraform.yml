@@ -58,7 +58,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Generic TF_VARs for all providers
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
@@ -68,6 +67,17 @@ jobs:
       TF_VAR_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+
+      # Pass all cloud provider secrets (they will be conditionally used in Terraform)
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
+      TF_VAR_gcp_project: ${{ secrets.GCP_PROJECT }}
+      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
+      TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Check Cloud Credentials Reminder
@@ -86,37 +96,22 @@ jobs:
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
-      # AWS Deployment
-      - name: Terraform Init and Apply - AWS
-        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-        run: |
-          terraform init
-          terraform apply -auto-approve -target=module.security_group -target=aws_instance.vm
+      - name: Terraform Init
+        run: terraform init
 
-      # GCP Deployment
-      - name: Terraform Init and Apply - GCP
-        if: ${{ github.event.inputs.cloud_provider == 'GCP' }}
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GCP_KEY_FILE }}
+      - name: Terraform Apply
         run: |
-          terraform init
-          terraform apply -auto-approve -target=google_compute_instance.vm
-
-      # Azure Deployment
-      - name: Terraform Init and Apply - Azure
-        if: ${{ github.event.inputs.cloud_provider == 'Azure' }}
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.AZURE_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        run: |
-          terraform init
-          terraform apply -auto-approve -target=azurerm_resource_group.rg -target=azurerm_virtual_network.vnet -target=azurerm_subnet.subnet -target=azurerm_public_ip.public_ip -target=azurerm_network_interface.nic -target=azurerm_linux_virtual_machine.vm
+          # Use -target for specific cloud provider to avoid processing others
+          if [ "${{ github.event.inputs.cloud_provider }}" = "AWS" ]; then
+            terraform apply -auto-approve -target=aws_instance.vm
+          elif [ "${{ github.event.inputs.cloud_provider }}" = "GCP" ]; then
+            terraform apply -auto-approve -target=google_compute_instance.vm
+          elif [ "${{ github.event.inputs.cloud_provider }}" = "Azure" ]; then
+            terraform apply -auto-approve -target=azurerm_linux_virtual_machine.vm
+          else
+            echo "Unsupported cloud provider"
+            exit 1
+          fi
 
       - name: Show Public IP
         run: |
