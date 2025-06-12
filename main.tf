@@ -14,7 +14,7 @@ resource "aws_vpc" "default" {
 resource "aws_subnet" "default" {
   count = var.vpc_id == "" ? 1 : 0  # Only create subnet if VPC is created
 
-  vpc_id = aws_vpc.default.id
+  vpc_id = aws_vpc.default.id  # Reference the new VPC if it is created
   cidr_block = "10.0.1.0/24"
   availability_zone = "${var.region}a"
   map_public_ip_on_launch = true
@@ -47,7 +47,7 @@ resource "aws_security_group" "default" {
   }
 }
 
-# AWS Instance Creation
+# AWS Instance Creation (make sure to use the correct VPC security group)
 resource "aws_instance" "vm" {
   count = var.cloud_provider == "AWS" ? 1 : 0
   ami   = data.aws_ami.latest_ubuntu.id
