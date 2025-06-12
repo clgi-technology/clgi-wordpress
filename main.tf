@@ -1,50 +1,3 @@
-# Terraform block with required providers
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 4.0"
-    }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-  required_version = ">= 1.3.0"
-}
-
-# AWS provider configuration
-provider "aws" {
-  alias  = "aws"
-  region = var.region
-  access_key = var.cloud_provider == "AWS" ? var.aws_access_key : null
-  secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : null
-  token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
-}
-
-# GCP provider configuration
-provider "google" {
-  alias       = "google"
-  credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
-  project     = var.gcp_project
-  region      = var.region
-}
-
-# Azure provider configuration
-provider "azurerm" {
-  alias           = "azurerm"
-  features        = {}
-
-  client_id       = var.cloud_provider == "Azure" ? var.azure_client_id : null
-  client_secret   = var.cloud_provider == "Azure" ? var.azure_secret : null
-  tenant_id       = var.cloud_provider == "Azure" ? var.azure_tenant_id : null
-  subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
-}
-
 # AWS VPC (only create if vpc_id is not provided)
 resource "aws_vpc" "default" {
   count             = var.vpc_id == "" ? 1 : 0
@@ -73,6 +26,8 @@ resource "aws_subnet" "default" {
 
 # AWS Security Group (only create if vpc_id is not provided)
 resource "aws_security_group" "default" {
+  count = var.vpc_id == "" ? 1 : 0  # Create if no VPC ID is provided or a new VPC is created
+
   vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default.id  # Use provided VPC ID or new one
   name   = "default-sg"
   description = "Default security group"
