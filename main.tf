@@ -75,6 +75,8 @@ resource "aws_subnet" "default" {
 }
 
 resource "aws_security_group" "default" {
+  count = var.vpc_id == "" ? 1 : 0  # Only create the security group if VPC is created
+
   vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default[count.index].id  # Use count.index to reference VPC
 
   name   = "default-sg"
