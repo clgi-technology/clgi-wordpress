@@ -88,6 +88,11 @@ variable "vm_size" {
   type        = string
 }
 
+variable "security_group_id" {
+  type    = string
+  default = ""  # or set a default for known SG
+}
+
 variable "vm_name" {
   description = "Name of the VM"
   type        = string
