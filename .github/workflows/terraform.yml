@@ -95,11 +95,11 @@ jobs:
 
       - name: Configure AWS Credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # optional, remove if not used
+          # aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Uncomment if using session token
           aws-region: ${{ github.event.inputs.region }}
 
       - name: Set up Terraform CLI
