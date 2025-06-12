@@ -39,7 +39,7 @@ on:
       region:
         description: "Cloud region (e.g., us-west-2)"
         required: true
-        default: "us-west-2"
+        default: "us-east-2"
 
       ssh_allowed_cidr:
         description: "CIDR allowed to SSH (e.g., your_ip/32)"
