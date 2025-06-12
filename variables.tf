@@ -93,25 +93,6 @@ variable "vm_name" {
   type        = string
 }
 
-# Cloud Credentials - Sensitive Values
-variable "gcp_key_file" {
-  description = "GCP Service Account Key JSON (as string)"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_client_id" {
-  description = "Azure Client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_secret" {
-  description = "Azure Client Secret"
-  type        = string
-  sensitive   = true
-}
-
 # Deployment Options
 variable "deployment_mode" {
   description = "Deployment mode: 'sandbox' for Django or 'production' for WordPress"
