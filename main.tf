@@ -90,7 +90,7 @@ resource "aws_key_pair" "key_pair" {
   key_name = "generated-key"
   
   # Corrected to use public_key_pem instead of public_key
-  public_key = data.tls_public_key.generated_key.public_key_pem
+  public_key = data.tls_public_key.generated_key.public_key_openssh
 }
 
 
