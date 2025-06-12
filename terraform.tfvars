@@ -9,7 +9,7 @@ vm_size               = "t3.medium"
 region                = "us-west-2"
 
 # Networking
-ssh_ip_address        = "203.0.113.45/32"  # Replace with your real IP
+ssh_ip_address        = "108.79.241.230/32"  # Replace with your real IP
 
 # Optional Clone Target
 clone_target_url      = ""                # Only required if setup_demo_clone = true
