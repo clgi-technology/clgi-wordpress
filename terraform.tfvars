@@ -14,7 +14,7 @@ ssh_ip_address        = "203.0.113.45/32"  # Replace with your real IP
 # Optional Clone Target
 clone_target_url      = ""                # Only required if setup_demo_clone = true
 
-# Secrets: Do NOT commit real values — use GitHub Secrets!
+# Secrets: Do NOT commit real values — use GitHub Secrets or environment variables!
 ssh_password          = "YOUR_SECURE_SSH_PASSWORD"
 
 # AWS Credentials (DO NOT COMMIT THESE — use GitHub Actions secrets or environment vars)
@@ -24,6 +24,13 @@ aws_session_token     = "REPLACE_IF_NEEDED"
 
 # GCP (Optional)
 gcp_project           = "your-gcp-project-id"
+gcp_key_file          = "your-gcp-key-file-path" # Path to GCP service account JSON key
+
+# Azure Credentials (Optional)
+azure_client_id       = "REPLACE_WITH_YOUR_AZURE_CLIENT_ID"
+azure_secret          = "REPLACE_WITH_YOUR_AZURE_SECRET"
+azure_tenant_id       = "REPLACE_WITH_YOUR_AZURE_TENANT_ID"
+azure_subscription_id = "REPLACE_WITH_YOUR_AZURE_SUBSCRIPTION_ID"
 
 # Optional DB/SMTP
 db_password           = "example-db-password"
