@@ -97,7 +97,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           # Uncomment the next line ONLY if you have a session token (temporary creds)
-          # aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ github.event.inputs.region }}
 
       - name: Debug AWS Environment Variables
