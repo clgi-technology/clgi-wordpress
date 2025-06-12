@@ -13,59 +13,10 @@ terraform {
       version = "~> 3.0"
     }
   }
+  required_version = ">= 1.3.0"
 }
 
-variable "cloud_provider" {
-  type        = string
-  description = "Cloud provider to deploy (AWS, GCP, Azure)"
-}
-
-variable "region" {
-  type = string
-}
-
-# AWS variables
-variable "aws_access_key" {
-  type    = string
-  default = ""
-}
-variable "aws_secret_key" {
-  type    = string
-  default = ""
-}
-variable "aws_session_token" {
-  type    = string
-  default = ""
-}
-
-# GCP variables
-variable "gcp_key_file" {
-  type    = string
-  default = ""
-}
-variable "gcp_project" {
-  type    = string
-  default = ""
-}
-
-# Azure variables
-variable "azure_client_id" {
-  type    = string
-  default = ""
-}
-variable "azure_secret" {
-  type    = string
-  default = ""
-}
-variable "azure_tenant_id" {
-  type    = string
-  default = ""
-}
-variable "azure_subscription_id" {
-  type    = string
-  default = ""
-}
-
+# Conditional AWS Provider
 provider "aws" {
   alias  = "default"
   region = var.region
@@ -78,6 +29,7 @@ provider "aws" {
   skip_requesting_account_id  = var.cloud_provider != "AWS"
 }
 
+# Conditional GCP Provider
 provider "google" {
   alias       = "default"
   credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
@@ -88,6 +40,7 @@ provider "google" {
   skip_requesting_account_id  = var.cloud_provider != "GCP"
 }
 
+# Conditional Azure Provider
 provider "azurerm" {
   alias           = "default"
   features        = {}
@@ -101,22 +54,6 @@ provider "azurerm" {
   skip_provider_registration  = var.cloud_provider != "Azure"
 }
 
-# AWS Provider
-provider "aws" {
-  region     = var.region
-}
-
-# Google Cloud Provider
-provider "google" {
-  project     = var.gcp_project
-  region      = var.region
-}
-
-# Azure Provider
-provider "azurerm" {
-  features {}
-  }
-
 # Generate SSH Key (if needed)
 resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
@@ -129,8 +66,9 @@ resource "aws_key_pair" "key_pair" {
   public_key = tls_private_key.generated_key.public_key_openssh
 }
 
-# Security Group Module (AWS only for now)
+# Security Group Module (AWS only)
 module "security_group" {
+  count           = var.cloud_provider == "AWS" ? 1 : 0
   source          = "./modules/security_group"
   project_name    = var.project_name
   aws_region      = var.region
@@ -138,15 +76,13 @@ module "security_group" {
   ssh_ip_address  = var.ssh_ip_address
 }
 
-# --------------------
 # AWS Instance
-# --------------------
 resource "aws_instance" "vm" {
   count         = var.cloud_provider == "AWS" ? 1 : 0
   ami           = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
   key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_security_group_ids = [module.security_group.security_group_id]
+  vpc_security_group_ids = [module.security_group[0].security_group_id]
 
   user_data = templatefile("${path.module}/user_data.sh.tmpl", {
     deployment_mode   = var.deployment_mode,
@@ -163,15 +99,14 @@ resource "aws_instance" "vm" {
 data "aws_ami" "latest_ubuntu" {
   most_recent = true
   owners      = ["amazon"]
+
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 }
 
-# --------------------
 # GCP Instance
-# --------------------
 resource "google_compute_instance" "vm" {
   count        = var.cloud_provider == "GCP" ? 1 : 0
   name         = var.vm_name
@@ -197,9 +132,7 @@ resource "google_compute_instance" "vm" {
   })
 }
 
-# --------------------
-# Azure Instance
-# --------------------
+# Azure Resources
 resource "azurerm_resource_group" "rg" {
   count    = var.cloud_provider == "Azure" ? 1 : 0
   name     = "${var.vm_name}-rg"
@@ -289,7 +222,7 @@ output "vm_ip" {
   description = "Public IP of the deployed instance"
 }
 
-# Save SSH Key
+# Output private key if generated
 resource "local_file" "private_key" {
   count           = var.use_existing_key_pair ? 0 : 1
   filename        = "${path.module}/generated-key.pem"
