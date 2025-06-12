@@ -47,25 +47,29 @@ provider "azurerm" {
 
 module "security_group" {
   source = "./modules/security_group"
-  
-  # Pass the provider alias to the module
-  aws_access_key      = var.aws_access_key
-  aws_secret_key      = var.aws_secret_key
-  aws_session_token   = var.aws_session_token
-  gcp_project         = var.gcp_project
+
+  cloud_provider        = var.cloud_provider
+  deployment_mode       = var.deployment_mode
+  setup_demo_clone      = var.setup_demo_clone
+  vm_name               = var.vm_name
+  vm_size               = var.vm_size
+  region                = var.region
+  ssh_ip_address        = var.ssh_ip_address
+  clone_target_url      = var.clone_target_url
+  ssh_password          = var.ssh_password
+  aws_access_key        = var.aws_access_key
+  aws_secret_key        = var.aws_secret_key
+  aws_session_token     = var.aws_session_token
+  gcp_project           = var.gcp_project
+  gcp_key_file          = var.gcp_key_file
+  azure_client_id       = var.azure_client_id
+  azure_secret          = var.azure_secret
+  azure_tenant_id       = var.azure_tenant_id
   azure_subscription_id = var.azure_subscription_id
-  azure_client_id     = var.azure_client_id
-  azure_tenant_id     = var.azure_tenant_id
-  azure_secret        = var.azure_secret
-  vm_name             = var.vm_name
-  vm_size             = var.vm_size
-  setup_demo_clone    = var.setup_demo_clone
-  ssh_password        = var.ssh_password
-  region              = var.region
-  use_existing_key_pair = var.use_existing_key_pair
-  existing_key_pair_name = var.existing_key_pair_name
-  clone_target_url    = var.clone_target_url
+  db_password           = var.db_password
+  smtp_password         = var.smtp_password
 }
+
 
 
 # AWS Instance
