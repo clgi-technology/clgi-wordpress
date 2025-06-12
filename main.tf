@@ -21,7 +21,7 @@ terraform {
 # AWS provider configuration
 provider "aws" {
   alias  = "aws"
-  region = var.region
+  region = "us-east-2"  # Set region explicitly here for Terraform
   access_key = var.cloud_provider == "AWS" ? var.aws_access_key : null
   secret_key = var.cloud_provider == "AWS" ? var.aws_secret_key : null
   token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
