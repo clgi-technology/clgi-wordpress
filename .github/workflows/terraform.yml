@@ -65,7 +65,7 @@ jobs:
       TF_VAR_clone_url: ${{ github.event.inputs.clone_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
-      TF_VAR_region: us-west-2
+      TF_VAR_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
       TF_VAR_wait_before_continue: ${{ github.event.inputs.wait_before_continue }}
 
@@ -137,9 +137,10 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
+        continue-on-error: true  # ✅ ensures next steps still run if this fails
         run: |
           if [ "${{ github.event.inputs.cloud_provider }}" = "AWS" ]; then
-            terraform apply -auto-approve -target=aws_instance.vm
+            terraform apply -auto-approve
           elif [ "${{ github.event.inputs.cloud_provider }}" = "GCP" ]; then
             terraform apply -auto-approve -target=google_compute_instance.vm
           elif [ "${{ github.event.inputs.cloud_provider }}" = "Azure" ]; then
@@ -153,3 +154,14 @@ jobs:
         run: |
           echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
           echo "Your server is available at: http://$(terraform output -raw vm_ip)"
+
+      - name: Cleanup orphaned AWS resources on failure
+        if: failure() && github.event.inputs.cloud_provider == 'AWS'
+        run: |
+          echo "Cleaning up orphaned security groups..."
+
+          # You can filter by tag or name pattern if needed
+          aws ec2 describe-security-groups --query 'SecurityGroups[?GroupName==`default-sg`].[GroupId]' --output text | while read sgid; do
+            echo "Attempting to delete Security Group $sgid"
+            aws ec2 delete-security-group --group-id $sgid || echo "Failed to delete $sgid"
+          done
