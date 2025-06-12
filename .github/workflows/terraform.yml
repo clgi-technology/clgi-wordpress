@@ -1,4 +1,4 @@
-name: Terraform Multi-Cloud Deployment
+name: Terraform Multi-Cloud Deployment 
 
 on:
   workflow_dispatch:
@@ -58,6 +58,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # General Input Variables
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
@@ -66,15 +67,23 @@ jobs:
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
+      TF_VAR_wait_before_continue: ${{ github.event.inputs.wait_before_continue }}
+
+      # SSH Password and other sensitive data (using GitHub secrets)
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
-      # Keep other cloud provider secrets here (non-AWS)
+      # Cloud Provider Specific Secrets (GCP, Azure, AWS)
       TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
       TF_VAR_gcp_project: ${{ secrets.GCP_PROJECT }}
       TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
       TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
       TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
       TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # AWS Secrets
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
 
     steps:
       - name: Check Cloud Credentials Reminder
@@ -96,7 +105,6 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # Uncomment the next line ONLY if you have a session token (temporary creds)
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ github.event.inputs.region }}
 
