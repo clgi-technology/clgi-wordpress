@@ -122,7 +122,7 @@ resource "aws_instance" "vm" {
   ami   = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
   key_name = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_security_group_ids = [aws_security_group.default[count.index].id]  # Accessing SG with count.index
+  vpc_security_group_ids = var.vpc_id == "" ? [aws_security_group.default[0].id] : [var.security_group_id]
 
   user_data = templatefile("${path.module}/user_data.sh.tmpl", {
     deployment_mode   = var.deployment_mode,
