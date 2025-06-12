@@ -159,8 +159,8 @@ data "aws_ami" "latest_ubuntu" {
 output "vm_ip" {
   value = (
     var.cloud_provider == "AWS"   ? aws_instance.vm[0].public_ip :
-    var.cloud_provider == "GCP"   ? google_compute_instance.vm[0].network_interface[0].access_config[0].nat_ip :
-    var.cloud_provider == "Azure" ? azurerm_public_ip.public_ip[0].ip_address :
+    # var.cloud_provider == "GCP"   ? google_compute_instance.vm[0].network_interface[0].access_config[0].nat_ip :
+    # var.cloud_provider == "Azure" ? azurerm_public_ip.public_ip[0].ip_address :
     null
   )
   description = "Public IP of the deployed instance"
