@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Pass these as TF_VAR_* to terraform regardless of provider
+      # Generic TF_VARs for all providers
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
@@ -95,7 +95,7 @@ jobs:
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           terraform init
-          terraform apply -auto-approve
+          terraform apply -auto-approve -target=module.security_group -target=aws_instance.vm
 
       # GCP Deployment
       - name: Terraform Init and Apply - GCP
@@ -104,7 +104,7 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GCP_KEY_FILE }}
         run: |
           terraform init
-          terraform apply -auto-approve
+          terraform apply -auto-approve -target=google_compute_instance.vm
 
       # Azure Deployment
       - name: Terraform Init and Apply - Azure
@@ -116,7 +116,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: |
           terraform init
-          terraform apply -auto-approve
+          terraform apply -auto-approve -target=azurerm_resource_group.rg -target=azurerm_virtual_network.vnet -target=azurerm_subnet.subnet -target=azurerm_public_ip.public_ip -target=azurerm_network_interface.nic -target=azurerm_linux_virtual_machine.vm
 
       - name: Show Public IP
         run: |
