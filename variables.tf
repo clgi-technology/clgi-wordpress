@@ -61,8 +61,9 @@ variable "project_name" {
 }
 
 variable "vpc_id" {
-  description = "The AWS VPC ID"
+  description = "The AWS VPC ID (leave blank to let Terraform create one)"
   type        = string
+  default     = ""
 }
 
 # Networking and SSH
