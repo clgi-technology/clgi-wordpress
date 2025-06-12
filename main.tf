@@ -26,7 +26,7 @@ provider "aws" {
   token      = var.cloud_provider == "AWS" ? var.aws_session_token : null
 }
 
-# GCP provider configuration (remove unsupported options)
+# GCP provider configuration
 provider "google" {
   alias       = "google"
   credentials = var.cloud_provider == "GCP" ? var.gcp_key_file : null
@@ -34,7 +34,7 @@ provider "google" {
   region      = var.region
 }
 
-# Azure provider configuration (remove unsupported options)
+# Azure provider configuration
 provider "azurerm" {
   alias           = "azurerm"
   features        = {}
@@ -45,40 +45,60 @@ provider "azurerm" {
   subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
 }
 
-module "security_group" {
-  source = "./modules/security_group"
+# AWS VPC (only create if vpc_id is not provided)
+resource "aws_vpc" "default" {
+  count             = var.vpc_id == "" ? 1 : 0
+  cidr_block        = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
 
-  cloud_provider        = var.cloud_provider
-  deployment_mode       = var.deployment_mode
-  setup_demo_clone      = var.setup_demo_clone
-  vm_name               = var.vm_name
-  vm_size               = var.vm_size
-  region                = var.region
-  ssh_ip_address        = var.ssh_ip_address
-  clone_target_url      = var.clone_target_url
-  ssh_password          = var.ssh_password
-  aws_access_key        = var.aws_access_key
-  aws_secret_key        = var.aws_secret_key
-  aws_session_token     = var.aws_session_token
-  gcp_project           = var.gcp_project
-  gcp_key_file          = var.gcp_key_file
-  azure_client_id       = var.azure_client_id
-  azure_secret          = var.azure_secret
-  azure_tenant_id       = var.azure_tenant_id
-  azure_subscription_id = var.azure_subscription_id
-  db_password           = var.db_password
-  smtp_password         = var.smtp_password
+  tags = {
+    Name = "default-vpc"
+  }
 }
 
+# AWS Subnet (only create if vpc_id is not provided)
+resource "aws_subnet" "default" {
+  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if VPC is created
 
+  vpc_id = aws_vpc.default.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "${var.region}a"
+  map_public_ip_on_launch = true
 
-# AWS Instance
+  tags = {
+    Name = "default-subnet"
+  }
+}
+
+# AWS Security Group (only create if vpc_id is not provided)
+resource "aws_security_group" "default" {
+  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default.id  # Use provided VPC ID or new one
+  name   = "default-sg"
+  description = "Default security group"
+
+  ingress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = [var.ssh_ip_address]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# AWS Instance Creation
 resource "aws_instance" "vm" {
-  count         = var.cloud_provider == "AWS" ? 1 : 0
-  ami           = data.aws_ami.latest_ubuntu.id
+  count = var.cloud_provider == "AWS" ? 1 : 0
+  ami   = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
-  key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_security_group_ids = [module.security_group[0].security_group_id]
+  key_name = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
+  vpc_security_group_ids = [aws_security_group.default.id]
 
   user_data = templatefile("${path.module}/user_data.sh.tmpl", {
     deployment_mode   = var.deployment_mode,
@@ -91,7 +111,7 @@ resource "aws_instance" "vm" {
     Name = var.vm_name
   }
 
-  provider = aws.aws # Reference to the AWS provider with alias
+  provider = aws.aws
 }
 
 data "aws_ami" "latest_ubuntu" {
@@ -103,7 +123,7 @@ data "aws_ami" "latest_ubuntu" {
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 
-  provider = aws.aws # Reference to the AWS provider with alias
+  provider = aws.aws
 }
 
 # GCP Instance
@@ -131,7 +151,7 @@ resource "google_compute_instance" "vm" {
     clone_target_url  = var.clone_target_url
   })
 
-  provider = google.google # Reference to the GCP provider with alias
+  provider = google.google
 }
 
 # Azure Resources
@@ -140,7 +160,7 @@ resource "azurerm_resource_group" "rg" {
   name     = "${var.vm_name}-rg"
   location = var.region
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -150,7 +170,7 @@ resource "azurerm_virtual_network" "vnet" {
   location            = var.region
   resource_group_name = azurerm_resource_group.rg[0].name
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 resource "azurerm_subnet" "subnet" {
@@ -160,7 +180,7 @@ resource "azurerm_subnet" "subnet" {
   virtual_network_name = azurerm_virtual_network.vnet[0].name
   address_prefixes     = ["10.0.1.0/24"]
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 resource "azurerm_public_ip" "public_ip" {
@@ -170,7 +190,7 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = azurerm_resource_group.rg[0].name
   allocation_method   = "Dynamic"
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 resource "azurerm_network_interface" "nic" {
@@ -186,7 +206,7 @@ resource "azurerm_network_interface" "nic" {
     public_ip_address_id          = azurerm_public_ip.public_ip[0].id
   }
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 resource "azurerm_linux_virtual_machine" "vm" {
@@ -222,7 +242,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
     clone_target_url  = var.clone_target_url
   }))
 
-  provider = azurerm.azurerm # Reference to the Azure provider with alias
+  provider = azurerm.azurerm
 }
 
 # Output IP
