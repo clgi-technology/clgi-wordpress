@@ -6,7 +6,7 @@ setup_demo_clone      = false            # true = static clone from URL, false =
 # VM Configuration
 vm_name               = "wordpress-server"
 vm_size               = "t3.medium"
-region                = "us-west-2"
+region                = "us-east-2"
 
 # Networking
 ssh_ip_address        = "108.79.241.230/32"  # Replace with your real IP
