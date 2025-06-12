@@ -1,8 +1,6 @@
-# variables.tf
-
-# Declare cloud provider variable
+# Cloud Provider Selection
 variable "cloud_provider" {
-  description = "The cloud provider to use"
+  description = "The cloud provider to use (AWS, GCP, Azure)"
   type        = string
   default     = "AWS"  # Default to AWS
 }
@@ -25,17 +23,6 @@ variable "azure_client_id" {
 
 variable "azure_secret" {
   description = "Azure Client Secret"
-  type        = string
-}
-
-# Project and Network Variables
-variable "project_name" {
-  description = "The name of the project"
-  type        = string
-}
-
-variable "vpc_id" {
-  description = "The AWS VPC ID"
   type        = string
 }
 
@@ -66,6 +53,18 @@ variable "aws_session_token" {
   type        = string
 }
 
+# Project and Network Variables
+variable "project_name" {
+  description = "The name of the project"
+  type        = string
+  default     = "my-project"  # optional default or remove if you want to provide explicitly
+}
+
+variable "vpc_id" {
+  description = "The AWS VPC ID"
+  type        = string
+}
+
 # Networking and SSH
 variable "ssh_ip_address" {
   description = "The SSH IP address (CIDR block)"
@@ -74,68 +73,6 @@ variable "ssh_ip_address" {
 
 variable "ssh_password" {
   description = "Password for SSH access"
-  type        = string
-}
-
-# Optional DB/SMTP Variables
-variable "db_password" {
-  description = "Database Password"
-  type        = string
-}
-
-variable "smtp_password" {
-  description = "SMTP Password"
-  type        = string
-}
-
-
-# Cloud Provider Selection
-variable "cloud_provider" {
-  description = "Cloud provider for deployment (AWS, GCP, Azure)"
-  type        = string
-}
-
-# AWS Credentials
-variable "aws_access_key" {
-  description = "AWS Access Key ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_secret_key" {
-  description = "AWS Secret Access Key"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_session_token" {
-  description = "AWS Session Token (optional, for temporary credentials)"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-# GCP Credentials
-variable "gcp_key_file" {
-  description = "GCP Service Account Key JSON (as string)"
-  type        = string
-  sensitive   = true
-}
-
-variable "gcp_project" {
-  description = "GCP Project ID"
-  type        = string
-}
-
-# Azure Credentials
-variable "azure_client_id" {
-  description = "Azure Client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "azure_secret" {
-  description = "Azure Client Secret"
   type        = string
   sensitive   = true
 }
@@ -156,53 +93,23 @@ variable "vm_name" {
   type        = string
 }
 
-# SSH and Key Management
-variable "ssh_password" {
-  description = "SSH password for the 'ubuntu' user"
+# Cloud Credentials - Sensitive Values
+variable "gcp_key_file" {
+  description = "GCP Service Account Key JSON (as string)"
   type        = string
   sensitive   = true
 }
 
-variable "use_existing_key_pair" {
-  description = "Use an existing key pair instead of generating a new one"
-  type        = bool
-  default     = false
-}
-
-variable "existing_key_pair_name" {
-  description = "Name of the existing key pair (if applicable)"
+variable "azure_client_id" {
+  description = "Azure Client ID"
   type        = string
-  default     = ""
+  sensitive   = true
 }
 
-# VPC / Networking
-variable "use_existing_vpc" {
-  description = "Use an existing VPC"
-  type        = bool
-  default     = false
-}
-
-variable "existing_vpc_id" {
-  description = "Existing VPC ID to use (if applicable)"
+variable "azure_secret" {
+  description = "Azure Client Secret"
   type        = string
-  default     = ""
-}
-
-variable "vpc_id" {
-  description = "VPC ID to associate with resources (used in security group module)"
-  type        = string
-  default     = ""
-}
-
-variable "project_name" {
-  description = "Name of the project to prefix resources"
-  type        = string
-  default     = "my-project"  # optional default or remove if you want to provide explicitly
-}
-
-variable "ssh_ip_address" {
-  description = "Your public IP address/CIDR to allow SSH (e.g., 203.0.113.0/32)"
-  type        = string
+  sensitive   = true
 }
 
 # Deployment Options
@@ -236,5 +143,31 @@ variable "smtp_password" {
   description = "SMTP password (if sending email is configured)"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+# SSH and Key Management
+variable "use_existing_key_pair" {
+  description = "Use an existing key pair instead of generating a new one"
+  type        = bool
+  default     = false
+}
+
+variable "existing_key_pair_name" {
+  description = "Name of the existing key pair (if applicable)"
+  type        = string
+  default     = ""
+}
+
+# VPC / Networking
+variable "use_existing_vpc" {
+  description = "Use an existing VPC"
+  type        = bool
+  default     = false
+}
+
+variable "existing_vpc_id" {
+  description = "Existing VPC ID to use (if applicable)"
+  type        = string
   default     = ""
 }
