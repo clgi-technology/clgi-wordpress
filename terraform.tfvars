@@ -1,12 +1,12 @@
 # Cloud Selection and Mode
 cloud_provider        = "AWS"            # Can be AWS, GCP, or Azure
 deployment_mode       = "sandbox"        # sandbox = Django, production = WordPress
-setup_demo_clone      = true            # true = static clone from URL, false = framework
+setup_demo_clone      = false            # true = static clone from URL, false = framework
 
 # VM Configuration
 vm_name               = "wordpress-server"
 vm_size               = "t3.medium"
-region                = "us-east-2"
+region                = "us-west-2"
 
 
 # Networking
