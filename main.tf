@@ -61,11 +61,10 @@ resource "aws_vpc" "default" {
   }
 }
 
-# AWS Subnet (only create if vpc_id is not provided)
 resource "aws_subnet" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if no existing VPC ID is provided
+  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if VPC is created
 
-  vpc_id = aws_vpc.default.id  # Reference the newly created VPC
+  vpc_id = aws_vpc.default[count.index].id  # Reference the VPC using count.index
   cidr_block = "10.0.1.0/24"
   availability_zone = "${var.region}a"
   map_public_ip_on_launch = true
@@ -73,15 +72,15 @@ resource "aws_subnet" "default" {
   tags = {
     Name = "default-subnet"
   }
+}
+
 
   depends_on = [aws_vpc.default]  # Ensure VPC is created before subnet
 }
 
-# AWS Security Group (only create if vpc_id is not provided)
 resource "aws_security_group" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Only create security group if no existing VPC ID is provided
+  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default[count.index].id  # Use count.index to reference VPC
 
-  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default.id  # Use existing VPC ID or new one
   name   = "default-sg"
   description = "Default security group"
 
@@ -98,6 +97,7 @@ resource "aws_security_group" "default" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
   depends_on = [aws_vpc.default]  # Ensure VPC is created before security group if needed
 }
@@ -147,6 +147,12 @@ output "vm_ip" {
   )
   description = "Public IP of the deployed instance"
 }
+
+resource "tls_private_key" "generated_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
 
 # OUTPUT: Private key if generated
 resource "local_file" "private_key" {
