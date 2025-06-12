@@ -66,15 +66,18 @@ resource "aws_key_pair" "key_pair" {
   public_key = tls_private_key.generated_key.public_key_openssh
 }
 
-# Security Group Module (AWS only)
 module "security_group" {
   count           = var.cloud_provider == "AWS" ? 1 : 0
   source          = "./modules/security_group"
   project_name    = var.project_name
-  aws_region      = var.region
   vpc_id          = var.vpc_id
   ssh_ip_address  = var.ssh_ip_address
+
+  providers = {
+    aws = aws.default
+  }
 }
+
 
 # AWS Instance
 resource "aws_instance" "vm" {
