@@ -1,3 +1,94 @@
+# variables.tf
+
+# Declare cloud provider variable
+variable "cloud_provider" {
+  description = "The cloud provider to use"
+  type        = string
+  default     = "AWS"  # Default to AWS
+}
+
+# Azure Variables
+variable "azure_subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+}
+
+variable "azure_tenant_id" {
+  description = "Azure Tenant ID"
+  type        = string
+}
+
+variable "azure_client_id" {
+  description = "Azure Client ID"
+  type        = string
+}
+
+variable "azure_secret" {
+  description = "Azure Client Secret"
+  type        = string
+}
+
+# Project and Network Variables
+variable "project_name" {
+  description = "The name of the project"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "The AWS VPC ID"
+  type        = string
+}
+
+# GCP Variables
+variable "gcp_project" {
+  description = "The GCP project ID"
+  type        = string
+}
+
+variable "gcp_key_file" {
+  description = "Path to the GCP service account key file"
+  type        = string
+}
+
+# AWS Variables
+variable "aws_access_key" {
+  description = "AWS Access Key"
+  type        = string
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Key"
+  type        = string
+}
+
+variable "aws_session_token" {
+  description = "AWS Session Token"
+  type        = string
+}
+
+# Networking and SSH
+variable "ssh_ip_address" {
+  description = "The SSH IP address (CIDR block)"
+  type        = string
+}
+
+variable "ssh_password" {
+  description = "Password for SSH access"
+  type        = string
+}
+
+# Optional DB/SMTP Variables
+variable "db_password" {
+  description = "Database Password"
+  type        = string
+}
+
+variable "smtp_password" {
+  description = "SMTP Password"
+  type        = string
+}
+
+
 # Cloud Provider Selection
 variable "cloud_provider" {
   description = "Cloud provider for deployment (AWS, GCP, Azure)"
