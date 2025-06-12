@@ -89,10 +89,13 @@ data "tls_public_key" "generated_key" {
 
 # AWS Key Pair Resource (using the generated public key)
 resource "aws_key_pair" "key_pair" {
-  count   = var.use_existing_key_pair ? 0 : 1
+  count    = var.use_existing_key_pair ? 0 : 1
   key_name = "generated-key"
-  public_key = data.tls_public_key.generated_key.public_key
+  
+  # Corrected to use public_key_pem instead of public_key
+  public_key = data.tls_public_key.generated_key.public_key_pem
 }
+
 
 resource "aws_security_group" "default" {
   count = var.vpc_id == "" ? 1 : 0  # Only create the security group if VPC is created
