@@ -74,10 +74,6 @@ resource "aws_subnet" "default" {
   }
 }
 
-
-  depends_on = [aws_vpc.default]  # Ensure VPC is created before subnet
-}
-
 resource "aws_security_group" "default" {
   vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default[count.index].id  # Use count.index to reference VPC
 
@@ -98,10 +94,7 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-  depends_on = [aws_vpc.default]  # Ensure VPC is created before security group if needed
-}
-
+ 
 # AWS Instance Creation (use correct VPC security group)
 resource "aws_instance" "vm" {
   count = var.cloud_provider == "AWS" ? 1 : 0
