@@ -45,18 +45,28 @@ provider "azurerm" {
   subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
 }
 
-# Security Group Module (fix provider reference)
 module "security_group" {
-  count           = var.cloud_provider == "AWS" ? 1 : 0
-  source          = "./modules/security_group"
-  project_name    = var.project_name
-  vpc_id          = var.vpc_id
-  ssh_ip_address  = var.ssh_ip_address
-
-  providers = {
-    aws = aws.aws
-  }
+  source = "./modules/security_group"
+  
+  # Pass the provider alias to the module
+  aws_access_key      = var.aws_access_key
+  aws_secret_key      = var.aws_secret_key
+  aws_session_token   = var.aws_session_token
+  gcp_project         = var.gcp_project
+  azure_subscription_id = var.azure_subscription_id
+  azure_client_id     = var.azure_client_id
+  azure_tenant_id     = var.azure_tenant_id
+  azure_secret        = var.azure_secret
+  vm_name             = var.vm_name
+  vm_size             = var.vm_size
+  setup_demo_clone    = var.setup_demo_clone
+  ssh_password        = var.ssh_password
+  region              = var.region
+  use_existing_key_pair = var.use_existing_key_pair
+  existing_key_pair_name = var.existing_key_pair_name
+  clone_target_url    = var.clone_target_url
 }
+
 
 # AWS Instance
 resource "aws_instance" "vm" {
