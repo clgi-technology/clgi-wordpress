@@ -7,8 +7,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ## 🗂️ Project Structure
 
 ```bash
-.
-terraform-project/
+./
 ├── main.tf
 ├── variables.tf
 ├── outputs.tf
