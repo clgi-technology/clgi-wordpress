@@ -90,6 +90,12 @@ variable "deployment_mode" {
   default     = "sandbox"
 }
 
+variable "auto_delete_after_24h" {
+  description = "Auto-delete resources after 24h (only applies to sandbox mode)"
+  type        = bool
+  default     = false
+}
+
 variable "setup_demo_clone" {
   description = "If true, clones a static site instead of using Django/WordPress"
   type        = bool
@@ -115,15 +121,4 @@ variable "smtp_password" {
   type        = string
   sensitive   = true
   default     = ""
-}
-variable "deployment_mode" {
-  description = "Deployment mode: 'sandbox' or 'production'"
-  type        = string
-  default     = "sandbox"
-}
-
-variable "auto_delete_after_24h" {
-  description = "Auto-delete resources after 24h (only applies to sandbox mode)"
-  type        = bool
-  default     = false
 }
