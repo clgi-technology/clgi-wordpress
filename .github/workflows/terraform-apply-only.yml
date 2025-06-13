@@ -1,0 +1,58 @@
+name: Terraform Apply Only
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud_provider:
+        description: "Choose Cloud Provider"
+        required: true
+        type: choice
+        options: [AWS, GCP, Azure]
+        default: AWS
+
+      region:
+        description: "Cloud region"
+        required: true
+        default: "us-west-2"
+
+      vm_name:
+        description: "VM name"
+        required: true
+        default: "clgi-deploy"
+
+      # Add other inputs if needed
+
+jobs:
+  terraform_apply_only:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
+      TF_VAR_region: ${{ github.event.inputs.region }}
+      TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
+
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+      # Add other secrets/env vars needed
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Restore Terraform state cache
+        id: cache-terraform
+        uses: actions/cache@v3
+        with:
+          path: |
+            .terraform
+            terraform.tfstate
+            terraform.tfstate.backup
+          key: terraform-state-${{ github.event.inputs.cloud_provider }}-${{ github.event.inputs.region }}-${{ hashFiles('**/*.tf') }}
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init (skip plugin download if cached)
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
