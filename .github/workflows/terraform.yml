@@ -18,19 +18,19 @@ on:
         default: sandbox
 
       auto_delete_after_24h:
-        description: "Auto-delete after 24 hours? (Only applies in sandbox mode)"
+        description: "Auto-delete after 24 hours? (sandbox mode only)"
         required: true
         type: choice
         options: [true, false]
         default: false
 
       setup_demo_clone:
-        description: "Clone an existing site? (true/false)"
+        description: "Clone an existing site?"
         required: true
         default: "false"
 
       clone_url:
-        description: "URL of the site to clone (if applicable)"
+        description: "URL of the site to clone"
         required: false
 
       vm_name:
@@ -64,7 +64,7 @@ on:
         default: "0.0.0.0/0"
 
       wait_before_continue:
-        description: "Wait 1 minute to double-check secrets setup?"
+        description: "Wait 1 minute to check secrets?"
         required: true
         type: choice
         options: [yes, no]
@@ -73,6 +73,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./clgi-wordpress   # 👈 This is the critical fix!
 
     env:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
@@ -86,7 +90,6 @@ jobs:
       TF_VAR_zone: ${{ github.event.inputs.zone }}
       TF_VAR_ssh_public_key_path: ${{ github.event.inputs.ssh_public_key_path }}
       TF_VAR_ssh_ip_address: ${{ github.event.inputs.ssh_allowed_cidr }}
-
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
       # Cloud Secrets
@@ -108,12 +111,10 @@ jobs:
     steps:
       - name: Check Cloud Credentials Reminder
         run: |
-          echo "::warning::Make sure you've added all required cloud credentials as GitHub secrets before continuing."
+          echo "::notice::Ensure cloud secrets are set before running this workflow."
           if [ "${{ github.event.inputs.wait_before_continue }}" = "yes" ]; then
-            echo "Waiting 60 seconds for you to verify credentials..."
+            echo "Waiting 60 seconds..."
             sleep 60
-          else
-            echo "Continuing without delay..."
           fi
 
       - name: Checkout Repository
@@ -128,48 +129,40 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ github.event.inputs.region }}
 
-      - name: Debug AWS Environment Variables
-        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
+      - name: Debug Environment Variables
         run: |
-          echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
-          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
-          echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
+          echo "Cloud: $TF_VAR_cloud_provider"
+          echo "Mode: $TF_VAR_deployment_mode"
+          echo "Region: $TF_VAR_region"
 
-      - name: Verify AWS Credentials
-        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
-        run: |
-          aws sts get-caller-identity --region ${AWS_REGION}
-
-      - name: Set up Terraform CLI
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: terraform init -input=false -no-color
-        working-directory: terraform-project
+        run: terraform init
 
-      - name: Terraform Plan (for visibility)
-        run: terraform plan -input=false -no-color -var-file=terraform.tfvars
-        working-directory: terraform-project
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="terraform.tfvars"
 
       - name: Terraform Apply
-        run: |
-          set -o pipefail
-          terraform apply -auto-approve -var-file=terraform.tfvars -input=false -no-color 2>&1 | tee apply.log
-          tail -50 apply.log
-        working-directory: terraform-project
+        run: terraform apply -auto-approve -var-file="terraform.tfvars"
 
-      - name: Show Public IP
+      - name: Show Public IP Output
         run: |
-          VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
-          echo "VM_IP=$VM_IP" >> $GITHUB_ENV
-          echo "Your server is available at: http://$VM_IP"
-        working-directory: terraform-project
+          echo "VM IP:"
+          terraform output vm_ip || echo "No IP output"
+
+      - name: Mark job complete
+        run: echo "::notice::Terraform apply finished."
 
       - name: Cleanup orphaned AWS resources on failure
         if: failure() && github.event.inputs.cloud_provider == 'AWS'
         run: |
           echo "Cleaning up orphaned security groups..."
           aws ec2 describe-security-groups --query 'SecurityGroups[?GroupName==`default-sg`].[GroupId]' --output text | while read sgid; do
-            echo "Attempting to delete Security Group $sgid"
-            aws ec2 delete-security-group --group-id $sgid || echo "Failed to delete $sgid"
+            echo "Trying to delete $sgid"
+            aws ec2 delete-security-group --group-id $sgid || echo "Could not delete $sgid"
           done
