@@ -1,12 +1,3 @@
-provider "azurerm" {
-  features {}
-
-  client_id       = var.azure_client_id
-  client_secret   = var.azure_secret
-  tenant_id       = var.azure_tenant_id
-  subscription_id = var.azure_subscription_id
-}
-
 resource "azurerm_resource_group" "rg" {
   name     = "rg-${var.vm_name}"
   location = var.region
@@ -26,6 +17,13 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+resource "azurerm_public_ip" "vm" {
+  name                = "${var.vm_name}-ip"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+}
+
 resource "azurerm_network_interface" "nic" {
   name                = "nic-${var.vm_name}"
   location            = var.region
@@ -37,13 +35,6 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.vm.id
   }
-}
-
-resource "azurerm_public_ip" "vm" {
-  name                = "${var.vm_name}-ip"
-  location            = var.region
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
 }
 
 resource "azurerm_linux_virtual_machine" "vm" {
