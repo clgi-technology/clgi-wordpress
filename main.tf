@@ -151,3 +151,19 @@ output "vm_ip" {
   value       = aws_instance.vm[0].public_ip
   description = "Public IP of the deployed instance"
 }
+
+# Auto-delete logic: only activates when in 'sandbox' mode and auto_delete_after_24h is true
+resource "time_sleep" "ttl" {
+  count           = var.deployment_mode == "sandbox" && var.auto_delete_after_24h ? 1 : 0
+  depends_on      = [aws_instance.vm]
+  create_duration = "24h"
+}
+
+resource "null_resource" "auto_destroy" {
+  count      = var.deployment_mode == "sandbox" && var.auto_delete_after_24h ? 1 : 0
+  depends_on = [time_sleep.ttl]
+
+  provisioner "local-exec" {
+    command = "terraform destroy -auto-approve"
+  }
+}
