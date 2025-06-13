@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+# Install dependencies
+apt-get update
+apt-get install -y apache2 php libapache2-mod-php php-mysql unzip curl wget
+
+# Enable and start Apache
+systemctl enable apache2
+systemctl start apache2
+
+# Optional: Clean default site
+rm -rf /var/www/html/*
+
+%{ if setup_demo_clone == "true" }
+
+# Clone WordPress files from existing site
+# NOTE: This will clone the rendered HTML (not a full WP migration)
+wget --mirror --convert-links --adjust-extension --page-requisites --no-parent ${clone_target_url} -P /var/www/html
+
+# Set correct permissions
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+
+%{ else }
+
+# Download and extract latest WordPress (if not cloning)
+cd /tmp
+curl -O https://wordpress.org/latest.tar.gz
+tar -xzf latest.tar.gz
+cp -r wordpress/* /var/www/html/
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+
+%{ endif }
+
+# Restart Apache
+systemctl restart apache2
