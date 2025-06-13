@@ -1,4 +1,4 @@
-# Cloud Provider Selection
+# General Cloud Provider Selection
 variable "cloud_provider" {
   description = "The cloud provider to use (AWS, GCP, Azure)"
   type        = string
@@ -37,6 +37,19 @@ variable "gcp_key_file" {
   type        = string
 }
 
+variable "zone" {
+  description = "GCP availability zone (e.g., us-central1-a)"
+  type        = string
+  default     = "us-central1-a"
+}
+
+# SSH Key for GCP & Azure
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key file (for GCP/Azure VMs)"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+
 # AWS Credentials (optional if using IAM roles/environment vars)
 variable "aws_access_key" {
   description = "AWS Access Key"
@@ -54,7 +67,7 @@ variable "aws_session_token" {
   default     = ""
 }
 
-# Networking and Project
+# Networking and Region
 variable "region" {
   description = "Cloud region (e.g., us-west-2, us-central1, eastus)"
   type        = string
@@ -66,8 +79,9 @@ variable "ssh_ip_address" {
   default     = "0.0.0.0/0"
 }
 
+# SSH Login
 variable "ssh_password" {
-  description = "Password for SSH access"
+  description = "Password for SSH access (for platforms that allow it)"
   type        = string
   sensitive   = true
 }
@@ -108,7 +122,7 @@ variable "clone_target_url" {
   default     = ""
 }
 
-# Optional Secrets
+# Optional: Database / SMTP
 variable "db_password" {
   description = "Database password (used for WordPress or Django if applicable)"
   type        = string
