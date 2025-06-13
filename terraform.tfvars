@@ -2,6 +2,8 @@
 cloud_provider        = "AWS"            # Can be AWS, GCP, or Azure
 deployment_mode       = "sandbox"        # sandbox = Django, production = WordPress
 setup_demo_clone      = false            # true = static clone from URL, false = framework
+auto_delete_after_24h  = true
+
 
 # VM Configuration
 vm_name               = "wordpress-server"
