@@ -1,108 +1,87 @@
-terraform {
-  required_version = ">= 1.3.0"
+variable "cloud_provider" {}
+variable "deployment_mode" {}
+variable "auto_delete_after_24h" {}
+variable "setup_demo_clone" {}
+variable "clone_target_url" {}
+variable "vm_name" {}
+variable "vm_size" {}
+variable "region" {}
+variable "zone" {}
+variable "ssh_public_key_path" {}
+variable "ssh_ip_address" {}
 
-  required_providers {
-    aws     = { source = "hashicorp/aws", version = "~> 5.0" }
-    google  = { source = "hashicorp/google", version = "~> 4.0" }
-    azurerm = { source = "hashicorp/azurerm", version = "~> 3.0" }
-  }
-}
+# AWS-specific
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
+variable "aws_session_token" {}
 
-provider "aws" {
-  region = var.region
-  alias  = "aws"
-}
+# GCP-specific
+variable "gcp_key_file" {}
+variable "gcp_project" {}
 
-provider "google" {
-  project     = var.gcp_project
-  credentials = file(var.gcp_key_file)
-  region      = var.region
-  zone        = var.zone
-  alias       = "gcp"
-}
+# Azure-specific
+variable "azure_client_id" {}
+variable "azure_secret" {}
+variable "azure_tenant_id" {}
+variable "azure_subscription_id" {}
 
-provider "azurerm" {
-  features = {}
-  subscription_id = var.azure_subscription_id
-  client_id       = var.azure_client_id
-  client_secret   = var.azure_secret
-  tenant_id       = var.azure_tenant_id
-  alias           = "azure"
-}
-
-# Conditional module instantiation using dynamic blocks
-# AWS
+# AWS Module
 module "aws" {
-  source   = "./modules/aws"
+  source  = "./modules/aws"
+  count   = var.cloud_provider == "AWS" ? 1 : 0
+
   providers = {
     aws = aws
   }
 
-  vm_name        = var.vm_name
-  region         = var.region
-  vm_size        = var.vm_size
-  ssh_allowed_ip = var.ssh_allowed_ip
-
-  # Optional workaround: wrap in a null_resource-like condition
-  lifecycle {
-    prevent_destroy = var.cloud_provider != "AWS"
-  }
-
-  depends_on = [null_resource.aws_guard]
+  vm_name             = var.vm_name
+  vm_size             = var.vm_size
+  region              = var.region
+  ssh_ip_address      = var.ssh_ip_address
+  ssh_password        = var.ssh_password
+  setup_demo_clone    = var.setup_demo_clone
+  clone_target_url    = var.clone_target_url
+  deployment_mode     = var.deployment_mode
+  auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-resource "null_resource" "aws_guard" {
-  count = var.cloud_provider == "AWS" ? 1 : 0
-}
-
-# GCP
+# GCP Module
 module "gcp" {
-  source   = "./modules/gcp"
+  source = "./modules/gcp"
+  count  = var.cloud_provider == "GCP" ? 1 : 0
+
   providers = {
     google = google
   }
 
   vm_name             = var.vm_name
+  vm_size             = var.vm_size
   region              = var.region
   zone                = var.zone
-  vm_size             = var.vm_size
-  ssh_public_key_path = var.ssh_public_key_path
-  gcp_project         = var.gcp_project
-  gcp_credentials     = var.gcp_key_file
-
-  lifecycle {
-    prevent_destroy = var.cloud_provider != "GCP"
-  }
-
-  depends_on = [null_resource.gcp_guard]
+  ssh_ip_address      = var.ssh_ip_address
+  ssh_password        = var.ssh_password
+  setup_demo_clone    = var.setup_demo_clone
+  clone_target_url    = var.clone_target_url
+  deployment_mode     = var.deployment_mode
+  auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-resource "null_resource" "gcp_guard" {
-  count = var.cloud_provider == "GCP" ? 1 : 0
-}
-
-# Azure
+# Azure Module
 module "azure" {
-  source   = "./modules/azure"
+  source = "./modules/azure"
+  count  = var.cloud_provider == "Azure" ? 1 : 0
+
   providers = {
     azurerm = azurerm
   }
 
-  vm_name               = var.vm_name
-  region                = var.region
-  vm_size               = var.vm_size
-  azure_client_id       = var.azure_client_id
-  azure_secret          = var.azure_secret
-  azure_tenant_id       = var.azure_tenant_id
-  azure_subscription_id = var.azure_subscription_id
-
-  lifecycle {
-    prevent_destroy = var.cloud_provider != "Azure"
-  }
-
-  depends_on = [null_resource.azure_guard]
-}
-
-resource "null_resource" "azure_guard" {
-  count = var.cloud_provider == "Azure" ? 1 : 0
+  vm_name             = var.vm_name
+  vm_size             = var.vm_size
+  region              = var.region
+  ssh_ip_address      = var.ssh_ip_address
+  ssh_password        = var.ssh_password
+  setup_demo_clone    = var.setup_demo_clone
+  clone_target_url    = var.clone_target_url
+  deployment_mode     = var.deployment_mode
+  auto_delete_after_24h = var.auto_delete_after_24h
 }
