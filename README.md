@@ -8,14 +8,24 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 
 ```bash
 .
-├── main.tf                 # Root Terraform configuration
-├── variables.tf            # Shared variables
-├── terraform.tfvars        # User-defined variable values (optional)
-├── outputs.tf              # Root outputs
+terraform-project/
+├── main.tf
+├── variables.tf
+├── outputs.tf
 └── modules/
-    ├── aws/                # AWS-specific resources
-    ├── gcp/                # GCP-specific resources
-    └── azure/              # Azure-specific resources
+    ├── aws/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── gcp/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── azure/
+        ├── main.tf
+        ├── variables.tf
+        └── outputs.tf
+
 ```
 
 ---
