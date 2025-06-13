@@ -13,16 +13,11 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ├── outputs.tf
 ├── terraform.tfvars
 ├── Templates/
-    │   ├── user_data.sh.tmpl
+        └── user_data.sh.tmpl
 ├── Scripts/
-    │   ├── install-clgi.sh
-    │   ├── install-django.sh
-    │   ├── install-wordpress.sh
-├── Security_Groups/
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   ├── version.tf
-    │   ├── variables.tf
+        ├── install-clgi.sh
+        ├── install-django.sh
+        └── install-wordpress.sh
 └── modules/
     ├── aws/
     │   ├── main.tf
@@ -33,6 +28,10 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
     │   ├── variables.tf
     │   └── outputs.tf
     └── azure/
+    │   ├── main.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── Security_Groups/
         ├── main.tf
         ├── variables.tf
         └── outputs.tf
