@@ -1,10 +1,3 @@
-provider "google" {
-  credentials = file(var.gcp_credentials)
-  project     = var.gcp_project
-  region      = var.region
-  zone        = var.zone
-}
-
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
 }
