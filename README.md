@@ -12,9 +12,9 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ├── variables.tf
 ├── outputs.tf
 ├── terraform.tfvars
-├── Templates/
+├── templates/
         └── user_data.sh.tmpl
-├── Scripts/
+├── scripts/
         ├── install-clgi.sh
         ├── install-django.sh
         └── install-wordpress.sh
@@ -31,7 +31,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
     │   ├── main.tf
     │   ├── variables.tf
     │   └── outputs.tf
-    └── Security_Groups/
+    └── security_groups/
         ├── main.tf
         ├── variables.tf
         └── outputs.tf
