@@ -12,6 +12,8 @@ terraform-project/
 ├── main.tf
 ├── variables.tf
 ├── outputs.tf
+├── Templates/
+    │   ├── user.data.tf
 └── modules/
     ├── aws/
     │   ├── main.tf
