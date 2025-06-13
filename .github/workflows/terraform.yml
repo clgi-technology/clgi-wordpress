@@ -105,10 +105,6 @@ jobs:
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
       AWS_REGION: ${{ github.event.inputs.region }}
 
-      # Enable detailed Terraform debug logging
-      TF_LOG: DEBUG
-      TF_LOG_PATH: terraform-debug.log
-
     steps:
       - name: Check Cloud Credentials Reminder
         run: |
@@ -123,12 +119,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Debug Environment Variables
-        run: |
-          set -x
-          echo "Listing environment variables:"
-          env | sort
-
       - name: Configure AWS Credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
         uses: aws-actions/configure-aws-credentials@v2
@@ -138,43 +128,39 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ github.event.inputs.region }}
 
+      - name: Debug AWS Environment Variables
+        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
+        run: |
+          echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
+          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
+          echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
+
       - name: Verify AWS Credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
         run: |
-          set -x
           aws sts get-caller-identity --region ${AWS_REGION}
 
-      - name: Terraform Version
-        run: |
-          set -x
-          terraform version
+      - name: Set up Terraform CLI
+        uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: |
-          set -x
-          terraform init -input=false
-
-      - name: Terraform Plan
-        run: |
-          set -x
-          terraform plan -input=false -no-color
+        run: terraform init
+        working-directory: terraform-project
 
       - name: Terraform Apply
-        run: |
-          set -x
-          terraform apply -auto-approve -input=false -no-color
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        working-directory: terraform-project
 
       - name: Show Public IP
         run: |
-          set -x
           VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
           echo "VM_IP=$VM_IP" >> $GITHUB_ENV
           echo "Your server is available at: http://$VM_IP"
+        working-directory: terraform-project
 
       - name: Cleanup orphaned AWS resources on failure
         if: failure() && github.event.inputs.cloud_provider == 'AWS'
         run: |
-          set -x
           echo "Cleaning up orphaned security groups..."
           aws ec2 describe-security-groups --query 'SecurityGroups[?GroupName==`default-sg`].[GroupId]' --output text | while read sgid; do
             echo "Attempting to delete Security Group $sgid"
