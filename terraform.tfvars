@@ -11,7 +11,7 @@ region                = "us-west-2"
 
 # Networking
 ssh_ip_address        = "108.79.241.230/32"  # Replace with your real IP
-vpc_id                = ""  # Leave empty if you want Terraform to create a new VPC
+
 
 
 # Optional Clone Target
