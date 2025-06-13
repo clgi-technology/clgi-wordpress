@@ -10,6 +10,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ./
 ├── main.tf
 ├── variables.tf
+├── providers.tf
 ├── outputs.tf
 ├── terraform.tfvars
 ├── templates/
