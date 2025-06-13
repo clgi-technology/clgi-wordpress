@@ -21,8 +21,8 @@ on:
         description: "Auto-delete after 24 hours? (Only applies in sandbox mode)"
         required: true
         type: choice
-        options: [yes, no]
-        default: no
+        options: [true, false]
+        default: false
 
       setup_demo_clone:
         description: "Clone an existing site? (true/false)"
@@ -48,6 +48,16 @@ on:
         required: true
         default: "us-west-2"
 
+      zone:
+        description: "GCP zone (e.g., us-central1-a) - optional"
+        required: false
+        default: "us-central1-a"
+
+      ssh_public_key_path:
+        description: "Path to SSH public key (for GCP/Azure)"
+        required: false
+        default: "~/.ssh/id_rsa.pub"
+
       ssh_allowed_cidr:
         description: "CIDR allowed to SSH (e.g., your_ip/32)"
         required: true
@@ -69,15 +79,17 @@ jobs:
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_auto_delete_after_24h: ${{ github.event.inputs.auto_delete_after_24h }}
       TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
-      TF_VAR_clone_url: ${{ github.event.inputs.clone_url }}
+      TF_VAR_clone_target_url: ${{ github.event.inputs.clone_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_region: ${{ github.event.inputs.region }}
-      TF_VAR_ssh_allowed_cidr: ${{ github.event.inputs.ssh_allowed_cidr }}
-      TF_VAR_wait_before_continue: ${{ github.event.inputs.wait_before_continue }}
+      TF_VAR_zone: ${{ github.event.inputs.zone }}
+      TF_VAR_ssh_public_key_path: ${{ github.event.inputs.ssh_public_key_path }}
+      TF_VAR_ssh_ip_address: ${{ github.event.inputs.ssh_allowed_cidr }}
 
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
+      # Cloud Secrets
       TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
       TF_VAR_gcp_project: ${{ secrets.GCP_PROJECT }}
       TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
