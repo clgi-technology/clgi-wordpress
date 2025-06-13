@@ -18,6 +18,11 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
     │   ├── install-clgi.sh
     │   ├── install-django.sh
     │   ├── install-wordpress.sh
+├── Security_Groups/
+    │   ├── main.tf
+    │   ├── outputs.tf
+    │   ├── version.tf
+    │   ├── variables.tf
 └── modules/
     ├── aws/
     │   ├── main.tf
