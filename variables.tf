@@ -158,3 +158,32 @@ variable "existing_vpc_id" {
   type        = string
   default     = ""
 }
+
+
+variable "cloud_provider" {}
+variable "region" {}
+variable "vm_size" {}
+variable "vm_name" {}
+variable "vpc_id" {
+  default = ""
+}
+variable "subnet_id" {
+  default = ""
+}
+variable "security_group_id" {
+  default = ""
+}
+variable "use_existing_key_pair" {
+  type    = bool
+  default = false
+}
+variable "existing_key_pair_name" {
+  default = ""
+}
+variable "ssh_ip_address" {
+  default = "0.0.0.0/0"
+}
+variable "deployment_mode" {}
+variable "setup_demo_clone" {}
+variable "ssh_password" {}
+variable "clone_target_url" {}
