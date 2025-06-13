@@ -1,6 +1,6 @@
-# 🌐 Multi-Cloud VM Deployment with Terraform
+# 🌐 Multi-Cloud VM Deployment with Terraform and GitHub Actions
 
-This project uses [Terraform](https://www.terraform.io/) to provision virtual machines on **AWS**, **GCP**, or **Azure**, with a modular and conditional setup.
+This project uses [Terraform](https://www.terraform.io/) to provision virtual machines on **AWS**, **GCP**, or **Azure**, with a modular and conditional setup via Github Actions.
 
 ---
 
