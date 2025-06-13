@@ -22,7 +22,7 @@ terraform {
 provider "aws" {
   alias  = "aws"
   region = var.region
-  }
+}
 
 # GCP provider configuration
 provider "google" {
@@ -43,63 +43,55 @@ provider "azurerm" {
   subscription_id = var.cloud_provider == "Azure" ? var.azure_subscription_id : null
 }
 
-# Your other resource definitions (e.g., VPC, subnet, instance) go here...
-
-
 # AWS VPC (only create if vpc_id is not provided)
-resource "aws_vpc" "default" {
-  count             = var.vpc_id == "" ? 1 : 0  # Create a new VPC if vpc_id is empty
-  cidr_block        = "10.0.0.0/16"
-  enable_dns_support = true
-  enable_dns_hostnames = true
+resource "aws_vpc" "terraform" {
+  count                  = var.vpc_id == "" ? 1 : 0
+  cidr_block             = "10.0.0.0/16"
+  enable_dns_support     = true
+  enable_dns_hostnames   = true
 
   tags = {
-    Name = "default-vpc"
+    Name = "terraform-vpc"
   }
 }
 
-resource "aws_subnet" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Only create subnet if VPC is created
+# AWS Subnet
+resource "aws_subnet" "terraform" {
+  count = var.vpc_id == "" ? 1 : 0
 
-  vpc_id = aws_vpc.default[count.index].id  # Reference the VPC using count.index
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "${var.region}a"
+  vpc_id                  = aws_vpc.terraform[count.index].id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.region}a"
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "default-subnet"
+    Name = "terraform-subnet"
   }
 }
 
-# Generate a new SSH private key (you can adjust the algorithm and size)
+# TLS key generation
 resource "tls_private_key" "generated_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# Generate the public key associated with the private key (use data instead of resource)
 data "tls_public_key" "generated_key" {
-  depends_on = [tls_private_key.generated_key]  # Ensure the private key is generated before creating the public key
-
-  private_key_pem = tls_private_key.generated_key.private_key_pem
+  depends_on        = [tls_private_key.generated_key]
+  private_key_pem   = tls_private_key.generated_key.private_key_pem
 }
 
-# AWS Key Pair Resource (using the generated public key)
 resource "aws_key_pair" "key_pair" {
-  count    = var.use_existing_key_pair ? 0 : 1
-  key_name = "generated-key"
-  
-  # Corrected to use public_key_pem instead of public_key
+  count      = var.use_existing_key_pair ? 0 : 1
+  key_name   = "generated-key"
   public_key = data.tls_public_key.generated_key.public_key_openssh
 }
 
+# AWS Security Group
+resource "aws_security_group" "terraform" {
+  count  = var.vpc_id == "" ? 1 : 0
+  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.terraform[count.index].id
 
-resource "aws_security_group" "default" {
-  count = var.vpc_id == "" ? 1 : 0  # Only create the security group if VPC is created
-
-  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.default[count.index].id  # Use count.index to reference VPC
-
-  name   = "default-sg"
+  name        = "terraform-sg"
   description = "Default security group"
 
   ingress {
@@ -116,13 +108,16 @@ resource "aws_security_group" "default" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
- 
+
+# EC2 Instance
 resource "aws_instance" "vm" {
-  count = var.cloud_provider == "AWS" ? 1 : 0
-  ami   = data.aws_ami.latest_ubuntu.id
+  count         = var.cloud_provider == "AWS" ? 1 : 0
+  ami           = data.aws_ami.latest_ubuntu.id
   instance_type = var.vm_size
-  key_name = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
-  vpc_security_group_ids = var.vpc_id == "" ? [aws_security_group.default[0].id] : [var.security_group_id]
+  key_name      = var.use_existing_key_pair ? var.existing_key_pair_name : aws_key_pair.key_pair[0].key_name
+
+  subnet_id = var.vpc_id == "" ? aws_subnet.terraform[0].id : var.subnet_id
+  vpc_security_group_ids = var.vpc_id == "" ? [aws_security_group.terraform[0].id] : [var.security_group_id]
 
   user_data = templatefile("${path.module}/user_data.sh.tmpl", {
     deployment_mode   = var.deployment_mode,
@@ -138,8 +133,7 @@ resource "aws_instance" "vm" {
   provider = aws.aws
 }
 
-
-# AWS AMI lookup for Ubuntu 20.04 (latest)
+# AWS AMI lookup
 data "aws_ami" "latest_ubuntu" {
   most_recent = true
   owners      = ["amazon"]
@@ -155,15 +149,12 @@ data "aws_ami" "latest_ubuntu" {
 # OUTPUT: Public IP
 output "vm_ip" {
   value = (
-    var.cloud_provider == "AWS"   ? aws_instance.vm[0].public_ip :
-    # var.cloud_provider == "GCP"   ? google_compute_instance.vm[0].network_interface[0].access_config[0].nat_ip :
-    # var.cloud_provider == "Azure" ? azurerm_public_ip.public_ip[0].ip_address :
-    null
+    var.cloud_provider == "AWS" ? aws_instance.vm[0].public_ip : null
   )
   description = "Public IP of the deployed instance"
 }
 
-# OUTPUT: Private key if generated
+# OUTPUT: Private key file
 resource "local_file" "private_key" {
   count           = var.use_existing_key_pair ? 0 : 1
   filename        = "${path.module}/generated-key.pem"
