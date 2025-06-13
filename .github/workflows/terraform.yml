@@ -137,17 +137,22 @@ jobs:
 
       - name: Verify AWS Credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
-        run: |
-          aws sts get-caller-identity --region ${AWS_REGION}
+        run: aws sts get-caller-identity --region $AWS_REGION
 
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
 
+      - name: Terraform Version
+        run: terraform version
+
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -input=false
 
       - name: Show Public IP
         run: |
