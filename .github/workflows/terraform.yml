@@ -11,158 +11,85 @@ on:
         default: AWS
 
       deployment_mode:
-        description: "Deployment mode (sandbox = Django, production = WordPress)"
+        description: "sandbox = Django, production = WordPress"
         required: true
         type: choice
         options: [sandbox, production]
         default: sandbox
 
       auto_delete_after_24h:
-        description: "Auto-delete after 24 hours? (sandbox mode only)"
+        description: "Auto-delete after 24 hours (sandbox only)?"
         required: true
         type: choice
         options: [true, false]
         default: false
 
-      setup_demo_clone:
-        description: "Clone an existing site?"
-        required: true
-        default: "false"
-
-      clone_url:
-        description: "URL of the site to clone"
-        required: false
-
       vm_name:
-        description: "Name of the VM"
+        description: "VM Name"
         required: true
         default: "clgi-deploy"
 
       vm_size:
-        description: "VM size (AWS: t3.medium, GCP: e2-medium, Azure: Standard_B1s)"
+        description: "VM Size"
         required: true
         default: "t3.medium"
 
       region:
-        description: "Cloud region (e.g., us-west-2)"
+        description: "Region"
         required: true
         default: "us-west-2"
 
-      zone:
-        description: "GCP zone (e.g., us-central1-a)"
-        required: false
-        default: "us-central1-a"
-
-      ssh_public_key_path:
-        description: "Path to SSH public key (for GCP/Azure)"
-        required: false
-        default: "~/.ssh/id_rsa.pub"
-
       ssh_allowed_cidr:
-        description: "CIDR allowed to SSH (e.g., your_ip/32)"
+        description: "CIDR allowed to SSH (e.g. your_ip/32)"
         required: true
         default: "0.0.0.0/0"
-
-      wait_before_continue:
-        description: "Wait 1 minute to check secrets?"
-        required: true
-        type: choice
-        options: [yes, no]
-        default: yes
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./clgi-wordpress   # 👈 This is the critical fix!
-
     env:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_auto_delete_after_24h: ${{ github.event.inputs.auto_delete_after_24h }}
-      TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
-      TF_VAR_clone_target_url: ${{ github.event.inputs.clone_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_region: ${{ github.event.inputs.region }}
-      TF_VAR_zone: ${{ github.event.inputs.zone }}
-      TF_VAR_ssh_public_key_path: ${{ github.event.inputs.ssh_public_key_path }}
       TF_VAR_ssh_ip_address: ${{ github.event.inputs.ssh_allowed_cidr }}
-      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
-      # Cloud Secrets
-      TF_VAR_gcp_key_file: ${{ secrets.GCP_KEY_FILE }}
-      TF_VAR_gcp_project: ${{ secrets.GCP_PROJECT }}
-      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      TF_VAR_azure_secret: ${{ secrets.AZURE_SECRET }}
-      TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
+      # Secrets (optional, if using cloud auth in Terraform modules)
       TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_REGION: ${{ github.event.inputs.region }}
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
     steps:
-      - name: Check Cloud Credentials Reminder
-        run: |
-          echo "::notice::Ensure cloud secrets are set before running this workflow."
-          if [ "${{ github.event.inputs.wait_before_continue }}" = "yes" ]; then
-            echo "Waiting 60 seconds..."
-            sleep 60
-          fi
-
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: ${{ github.event.inputs.region }}
-
-      - name: Debug Environment Variables
-        run: |
-          echo "Cloud: $TF_VAR_cloud_provider"
-          echo "Mode: $TF_VAR_deployment_mode"
-          echo "Region: $TF_VAR_region"
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
         run: terraform init
+        working-directory: ./
 
       - name: Terraform Validate
         run: terraform validate
+        working-directory: ./
 
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars"
+        working-directory: ./
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
+        working-directory: ./
 
-      - name: Show Public IP Output
+      - name: Show Output IP
         run: |
-          echo "VM IP:"
-          terraform output vm_ip || echo "No IP output"
-
-      - name: Mark job complete
-        run: echo "::notice::Terraform apply finished."
-
-      - name: Cleanup orphaned AWS resources on failure
-        if: failure() && github.event.inputs.cloud_provider == 'AWS'
-        run: |
-          echo "Cleaning up orphaned security groups..."
-          aws ec2 describe-security-groups --query 'SecurityGroups[?GroupName==`default-sg`].[GroupId]' --output text | while read sgid; do
-            echo "Trying to delete $sgid"
-            aws ec2 delete-security-group --group-id $sgid || echo "Could not delete $sgid"
-          done
+          echo "Fetching public IP from Terraform output..."
+          VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
+          echo "VM_IP=$VM_IP" >> $GITHUB_ENV
+          echo "Server IP: $VM_IP"
+        working-directory: ./
