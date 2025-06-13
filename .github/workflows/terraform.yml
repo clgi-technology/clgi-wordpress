@@ -144,11 +144,18 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false -no-color
+        working-directory: terraform-project
+
+      - name: Terraform Plan (for visibility)
+        run: terraform plan -input=false -no-color -var-file=terraform.tfvars
         working-directory: terraform-project
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        run: |
+          set -o pipefail
+          terraform apply -auto-approve -var-file=terraform.tfvars -input=false -no-color 2>&1 | tee apply.log
+          tail -50 apply.log
         working-directory: terraform-project
 
       - name: Show Public IP
