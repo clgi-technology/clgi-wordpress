@@ -38,6 +38,38 @@ Select the provider at deploy time using the `cloud_provider` variable.
   - GCP: Service Account JSON key file
   - Azure: Service principal credentials
 
+## 🚀 CI/CD with GitHub Actions
+
+This repository uses **GitHub Actions** to automatically manage infrastructure provisioning with **Terraform**. When a user triggers a workflow dispatch, Terraform will:
+
+1. Initialize the working directory
+2. Validate and plan the infrastructure
+3. Apply the Terraform configuration to provision the selected cloud resources
+
+### 📦 Workflow Features
+
+- Manual trigger via GitHub UI
+- Selectable cloud provider (`AWS`, `GCP`, `Azure`)
+- Auto-caches `.terraform` and state files
+- Supports secret injection for credentials
+
+### 🛠️ Triggering the Workflow
+
+Go to the **Actions** tab, select `Terraform Apply Only`, and click **Run workflow**. You’ll be prompted to:
+
+- Choose the cloud provider
+- Define region
+- Set VM name
+
+### 🔐 Secrets Required
+
+Add these secrets under your repo's **Settings > Secrets and variables**:
+- `SSH_PASSWORD`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- (and any other cloud-specific keys as needed)
+
+
 ---
 
 ## ⚙️ Usage
