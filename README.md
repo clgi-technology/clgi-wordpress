@@ -14,9 +14,9 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ├── Templates/
     │   ├── user_data.sh.tmpl
 ├── Scripts/
-    │   ├── user_data.sh.tmpl
-    │   ├── user_data.sh.tmpl
-    │   ├── user_data.sh.tmpl
+    │   ├── install-clgi.sh
+    │   ├── install-django.sh
+    │   ├── install-wordpress.sh
 └── modules/
     ├── aws/
     │   ├── main.tf
