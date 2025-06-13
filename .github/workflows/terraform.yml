@@ -117,7 +117,7 @@ jobs:
         run: |
           echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
-          echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:64}***"
+          echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
 
       - name: Verify AWS credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
