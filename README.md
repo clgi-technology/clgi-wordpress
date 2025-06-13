@@ -11,6 +11,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ├── main.tf
 ├── variables.tf
 ├── outputs.tf
+├── terraform.tfvars
 ├── Templates/
     │   ├── user_data.sh.tmpl
 ├── Scripts/
