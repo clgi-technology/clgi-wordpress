@@ -13,6 +13,10 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 ├── outputs.tf
 ├── Templates/
     │   ├── user_data.sh.tmpl
+├── Scripts/
+    │   ├── user_data.sh.tmpl
+    │   ├── user_data.sh.tmpl
+    │   ├── user_data.sh.tmpl
 └── modules/
     ├── aws/
     │   ├── main.tf
