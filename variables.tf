@@ -116,3 +116,14 @@ variable "smtp_password" {
   sensitive   = true
   default     = ""
 }
+variable "deployment_mode" {
+  description = "Deployment mode: 'sandbox' or 'production'"
+  type        = string
+  default     = "sandbox"
+}
+
+variable "auto_delete_after_24h" {
+  description = "Auto-delete resources after 24h (only applies to sandbox mode)"
+  type        = bool
+  default     = false
+}
