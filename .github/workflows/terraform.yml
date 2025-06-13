@@ -49,7 +49,7 @@ on:
         default: "us-west-2"
 
       zone:
-        description: "GCP zone (e.g., us-central1-a) - optional"
+        description: "GCP zone (e.g., us-central1-a)"
         required: false
         default: "us-central1-a"
 
@@ -135,15 +135,10 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}***"
           echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}***"
 
-      - name: Verify AWS credentials
+      - name: Verify AWS Credentials
         if: ${{ github.event.inputs.cloud_provider == 'AWS' }}
         run: |
-          echo "Verifying AWS credentials for region: ${AWS_REGION}"
           aws sts get-caller-identity --region ${AWS_REGION}
-          if [ $? -ne 0 ]; then
-            echo "AWS credentials are invalid or expired"
-            exit 1
-          fi
 
       - name: Set up Terraform CLI
         uses: hashicorp/setup-terraform@v2
@@ -152,23 +147,13 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        continue-on-error: true
-        run: |
-          if [ "${{ github.event.inputs.cloud_provider }}" = "AWS" ]; then
-            terraform apply -auto-approve
-          elif [ "${{ github.event.inputs.cloud_provider }}" = "GCP" ]; then
-            terraform apply -auto-approve -target=google_compute_instance.vm
-          elif [ "${{ github.event.inputs.cloud_provider }}" = "Azure" ]; then
-            terraform apply -auto-approve -target=azurerm_linux_virtual_machine.vm
-          else
-            echo "Unsupported cloud provider"
-            exit 1
-          fi
+        run: terraform apply -auto-approve
 
       - name: Show Public IP
         run: |
-          echo "VM_IP=$(terraform output -raw vm_ip)" >> $GITHUB_ENV
-          echo "Your server is available at: http://$(terraform output -raw vm_ip)"
+          VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
+          echo "VM_IP=$VM_IP" >> $GITHUB_ENV
+          echo "Your server is available at: http://$VM_IP"
 
       - name: Cleanup orphaned AWS resources on failure
         if: failure() && github.event.inputs.cloud_provider == 'AWS'
