@@ -29,22 +29,25 @@ provider "azurerm" {
 
 module "aws" {
   source = "./modules/aws"
-  count  = var.cloud_provider == "AWS" ? 1 : 0
 
   providers = {
     aws = aws
   }
 
-  vm_name               = var.vm_name
-  vm_size               = var.vm_size
-  region                = var.region
-  ssh_ip_address        = var.ssh_ip_address
+  # Only include variables your module supports!
+  vm_name              = var.vm_name
+  vm_size              = var.vm_size
+  region               = var.region
+  ssh_allowed_ip       = var.ssh_allowed_cidr
+
+  # Optional: only if you added these to module variables.tf
   ssh_password          = var.ssh_password
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
   deployment_mode       = var.deployment_mode
   auto_delete_after_24h = var.auto_delete_after_24h
 }
+
 
 ##############################################################################
 # GCP Module
