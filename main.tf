@@ -1,100 +1,100 @@
-# AWS
+terraform {
+  required_version = ">= 1.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
 provider "aws" {
-  region = var.region
-  alias  = "aws"
+  region     = var.aws_region
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+  token      = var.aws_session_token
+  # You might want to omit these if using environment variables or profiles
 }
 
-# GCP
 provider "google" {
-  credentials = file(var.gcp_key_file)
   project     = var.gcp_project
-  region      = var.region
-  zone        = var.zone
-  alias       = "google"
+  credentials = file(var.gcp_credentials)
+  region      = var.gcp_region
+  zone        = var.gcp_zone
 }
 
-# Azure
 provider "azurerm" {
-  features {}
+  features = {}
+  subscription_id = var.azure_subscription_id
   client_id       = var.azure_client_id
   client_secret   = var.azure_secret
   tenant_id       = var.azure_tenant_id
-  subscription_id = var.azure_subscription_id
-  alias           = "azurerm"
 }
 
-##############################################################################
-# AWS Module
-##############################################################################
-
+# Conditionally deploy AWS module
 module "aws" {
   source = "./modules/aws"
 
-  providers = {
-    aws = aws
-  }
+  count = var.cloud_provider == "aws" ? 1 : 0
 
-  # Only include variables your module supports!
-  vm_name              = var.vm_name
-  vm_size              = var.vm_size
-  region               = var.region
-  ssh_allowed_ip       = var.ssh_allowed_cidr
+  region           = var.aws_region
+  vm_name          = var.vm_name
+  vm_size          = var.vm_size
+  ssh_allowed_ip   = var.ssh_allowed_ip
+  ssh_password     = var.ssh_password
 
-  # Optional: only if you added these to module variables.tf
+  deployment_mode       = var.deployment_mode
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
-  deployment_mode       = var.deployment_mode
   auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-
-##############################################################################
-# GCP Module
-##############################################################################
-
+# Conditionally deploy GCP module
 module "gcp" {
   source = "./modules/gcp"
-  count  = var.cloud_provider == "GCP" ? 1 : 0
 
-  providers = {
-    google = google
-  }
+  count = var.cloud_provider == "gcp" ? 1 : 0
 
-  vm_name               = var.vm_name
-  vm_size               = var.vm_size
-  region                = var.region
-  zone                  = var.zone
-  ssh_public_key_path   = var.ssh_public_key_path
+  gcp_project       = var.gcp_project
+  gcp_credentials   = var.gcp_credentials
+  region            = var.gcp_region
+  zone              = var.gcp_zone
+  vm_name           = var.vm_name
+  vm_size           = var.vm_size
+  ssh_allowed_ip    = var.ssh_allowed_ip
+
+  deployment_mode       = var.deployment_mode
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
-  deployment_mode       = var.deployment_mode
   auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-##############################################################################
-# Azure Module
-##############################################################################
-
+# Conditionally deploy Azure module
 module "azure" {
   source = "./modules/azure"
-  count  = var.cloud_provider == "Azure" ? 1 : 0
 
-  providers = {
-    azurerm = azurerm
-  }
-
-  vm_name               = var.vm_name
-  vm_size               = var.vm_size
-  region                = var.region
-  ssh_ip_address        = var.ssh_ip_address
-  ssh_password          = var.ssh_password
-  setup_demo_clone      = var.setup_demo_clone
-  clone_target_url      = var.clone_target_url
-  deployment_mode       = var.deployment_mode
-  auto_delete_after_24h = var.auto_delete_after_24h
+  count = var.cloud_provider == "azure" ? 1 : 0
 
   azure_client_id       = var.azure_client_id
   azure_secret          = var.azure_secret
   azure_tenant_id       = var.azure_tenant_id
   azure_subscription_id = var.azure_subscription_id
+  region                = var.azure_region
+  vm_name               = var.vm_name
+  vm_size               = var.vm_size
+  ssh_allowed_ip        = var.ssh_allowed_ip
+
+  deployment_mode       = var.deployment_mode
+  setup_demo_clone      = var.setup_demo_clone
+  clone_target_url      = var.clone_target_url
+  auto_delete_after_24h = var.auto_delete_after_24h
 }
