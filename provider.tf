@@ -1,4 +1,5 @@
-# root/provider.tf file
+# Root provider file
+
 terraform {
   required_providers {
     aws = {
