@@ -1,13 +1,6 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
+# module/azure/main.tf
 
-# No provider block; all resources will use the inherited provider
+# No provider block or required block; all resources will use the inherited provider
 
 resource "azurerm_resource_group" "rg" {
   name     = "rg-${var.vm_name}"
