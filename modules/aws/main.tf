@@ -1,5 +1,16 @@
 # module/aws/main.tf file
 # No provider block or required block; all resources will use the inherited provider
+variable "enabled" {
+  type    = bool
+  default = true
+}
+
+resource "aws_instance" "vm" {
+  count = var.enabled ? 1 : 0
+  ...
+}
+
+
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
