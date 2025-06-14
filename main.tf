@@ -14,6 +14,7 @@ module "aws" {
   deployment_mode       = var.deployment_mode
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
+  ssh_public_key_path = var.ssh_public_key_path
   auto_delete_after_24h = var.auto_delete_after_24h
 }
 
