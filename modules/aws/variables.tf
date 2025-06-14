@@ -42,3 +42,8 @@ variable "auto_delete_after_24h" {
   type        = bool
   default     = false
 }
+variable "ssh_password" {
+  description = "Optional password for SSH access"
+  type        = string
+  default     = null
+}
