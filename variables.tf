@@ -40,6 +40,17 @@ variable "aws_region" {
   type        = string
 }
 
+variable "ssh_public_key" {
+  description = "SSH public key content"
+  type        = string
+}
+
+variable "ssh_private_key" {
+  description = "SSH private key content"
+  type        = string
+  sensitive   = true
+}
+
 variable "ssh_allowed_ip" {
   description = "IP CIDR allowed to SSH"
   type        = string
