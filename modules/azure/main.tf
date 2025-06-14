@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+  }
+}
+
 resource "azurerm_resource_group" "rg" {
   name     = "rg-${var.vm_name}"
   location = var.region
