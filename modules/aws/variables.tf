@@ -1,4 +1,44 @@
-variable "region" {}
-variable "vm_name" {}
-variable "vm_size" {}
-variable "ssh_allowed_ip" {}
+# modules/aws/variables.tf
+
+variable "vm_name" {
+  description = "Name of the VM"
+  type        = string
+}
+
+variable "vm_size" {
+  description = "Size of the VM"
+  type        = string
+}
+
+variable "region" {
+  description = "Region for AWS resources"
+  type        = string
+}
+
+variable "ssh_allowed_ip" {
+  description = "CIDR block for allowed SSH access"
+  type        = string
+}
+
+variable "deployment_mode" {
+  description = "Deployment mode (sandbox or production)"
+  type        = string
+}
+
+variable "setup_demo_clone" {
+  description = "Whether to clone a demo site"
+  type        = bool
+  default     = false
+}
+
+variable "clone_target_url" {
+  description = "URL of the demo site to clone"
+  type        = string
+  default     = null
+}
+
+variable "auto_delete_after_24h" {
+  description = "Whether to auto-destroy the infra after 24h"
+  type        = bool
+  default     = false
+}
