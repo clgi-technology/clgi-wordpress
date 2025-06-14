@@ -7,12 +7,6 @@ terraform {
   }
 }
 
-provider "google" {
-  project     = var.gcp_project
-  credentials = var.gcp_credentials
-  region      = var.region
-  zone        = var.zone
-}
 
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
