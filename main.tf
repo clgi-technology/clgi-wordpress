@@ -1,3 +1,5 @@
+# Root Main.tf file
+
 # AWS Module
 module "aws" {
   source = "./modules/aws"
