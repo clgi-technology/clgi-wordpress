@@ -64,6 +64,11 @@ resource "aws_security_group" "ssh" {
   }
 }
 
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = var.ssh_public_key
+}
+
 resource "tls_private_key" "key" {
   algorithm = "RSA"
   rsa_bits  = 4096
