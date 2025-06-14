@@ -22,18 +22,18 @@ provider "aws" {
   token      = var.aws_session_token
 }
 
-provider "google" {
-  project     = var.gcp_project
-  credentials = file(var.gcp_key_file)
-  region      = var.gcp_region
-  zone        = var.gcp_zone
-}
+#provider "google" {
+#  project     = var.gcp_project
+#  credentials = file(var.gcp_key_file)
+#  region      = var.gcp_region
+#  zone        = var.gcp_zone
+#}
 
-provider "azurerm" {
-  features {}
+#provider "azurerm" {
+#  features {}
 
-  subscription_id = var.azure_subscription_id
-  client_id       = var.azure_client_id
-  client_secret   = var.azure_secret
-  tenant_id       = var.azure_tenant_id
-}
+#  subscription_id = var.azure_subscription_id
+#  client_id       = var.azure_client_id
+#  client_secret   = var.azure_secret
+#  tenant_id       = var.azure_tenant_id
+#}
