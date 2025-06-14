@@ -22,6 +22,11 @@ variable "ssh_password" {
   default     = null
 }
 
+variable "ssh_allowed_ip" {
+  description = "The IP address or CIDR block allowed to SSH into the VM"
+  type        = string
+}
+
 variable "setup_demo_clone" {
   description = "If true, clone a demo repo into the VM"
   type        = bool
