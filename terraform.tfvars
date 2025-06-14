@@ -1,23 +1,19 @@
 # Cloud Selection and Mode
-cloud_provider        = "AWS"            # Can be AWS, GCP, or Azure
+cloud_provider        = "aws"            # lowercase to match expected variable
 deployment_mode       = "sandbox"        # sandbox = Django, production = WordPress
-setup_demo_clone      = false            # true = static clone from URL, false = framework
-auto_delete_after_24h  = true
-
+setup_demo_clone      = false
+auto_delete_after_24h = true
 
 # VM Configuration
 vm_name               = "wordpress-server"
 vm_size               = "t3.medium"
-region                = "us-west-2"
-
+aws_region            = "us-west-2"      # explicitly for AWS module
 
 # Networking
-ssh_ip_address        = "108.79.241.230/32"  # Replace with your real IP
-
-
+ssh_allowed_ip        = "108.79.241.230/32"  # renamed to match variable name
 
 # Optional Clone Target
-clone_target_url      = ""                # Only required if setup_demo_clone = true
+clone_target_url      = ""                # required only if setup_demo_clone = true
 
 # Secrets: Do NOT commit real values — use GitHub Secrets or environment variables!
 ssh_password          = "YOUR_SECURE_SSH_PASSWORD"
@@ -27,16 +23,17 @@ aws_access_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
 aws_secret_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
 aws_session_token     = "REPLACE_IF_NEEDED"
 
-# GCP (Optional)
+# GCP (optional)
 gcp_project           = "your-gcp-project-id"
-gcp_key_file          = "your-gcp-key-file-path" # Path to GCP service account JSON key
+gcp_credentials       = "your-gcp-key-file-path"  # renamed to match variable
 
-# Azure Credentials (Optional)
+# Azure Credentials (optional)
 azure_client_id       = "REPLACE_WITH_YOUR_AZURE_CLIENT_ID"
 azure_secret          = "REPLACE_WITH_YOUR_AZURE_SECRET"
 azure_tenant_id       = "REPLACE_WITH_YOUR_AZURE_TENANT_ID"
 azure_subscription_id = "REPLACE_WITH_YOUR_AZURE_SUBSCRIPTION_ID"
+azure_region          = "eastus"  # specify if used
 
-# Optional DB/SMTP
+# Optional DB/SMTP passwords - declare these in variables.tf if used
 db_password           = "example-db-password"
 smtp_password         = "example-smtp-password"
