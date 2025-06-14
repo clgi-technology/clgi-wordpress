@@ -41,7 +41,6 @@ module "aws" {
   ssh_allowed_ip       = var.ssh_allowed_cidr
 
   # Optional: only if you added these to module variables.tf
-  ssh_password          = var.ssh_password
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
   deployment_mode       = var.deployment_mode
