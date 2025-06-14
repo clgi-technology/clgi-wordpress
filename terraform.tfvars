@@ -19,6 +19,7 @@ clone_target_url      = ""                # required only if setup_demo_clone = 
 
 # Secrets: Do NOT commit real values — use GitHub Secrets or environment variables!
 ssh_password          = "YOUR_SECURE_SSH_PASSWORD"
+ssh_public_key_path   = "path/to/your/id_rsa.pub"
 
 # AWS Credentials (DO NOT COMMIT THESE — use GitHub Actions secrets or environment vars)
 aws_access_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
@@ -28,6 +29,7 @@ aws_session_token     = "REPLACE_IF_NEEDED"
 # GCP (optional)
 gcp_project           = "your-gcp-project-id"
 gcp_credentials       = "your-gcp-key-file-path"  # renamed to match variable
+
 
 # Azure Credentials (optional)
 azure_client_id       = "REPLACE_WITH_YOUR_AZURE_CLIENT_ID"
