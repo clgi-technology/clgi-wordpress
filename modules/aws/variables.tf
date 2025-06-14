@@ -51,4 +51,8 @@ variable "ssh_public_key_path" {
   description = "Path to SSH public key for AWS EC2"
   type        = string
 }
+variable "ssh_public_key" {
+  description = "Public SSH key to inject into AWS EC2"
+  type        = string
+}
 
