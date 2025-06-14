@@ -1,3 +1,5 @@
+# Root terraform.tfvars file
+
 # Cloud Selection and Mode
 cloud_provider        = "aws"            # lowercase to match expected variable
 deployment_mode       = "sandbox"        # sandbox = Django, production = WordPress
