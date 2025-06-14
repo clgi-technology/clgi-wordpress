@@ -87,6 +87,10 @@ variable "gcp_credentials" {
   type        = string
   default     = null
 }
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key for GCP instance access"
+  type        = string
+}
 
 variable "gcp_region" {
   description = "GCP region"
