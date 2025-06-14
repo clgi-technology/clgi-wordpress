@@ -48,6 +48,7 @@ variable "ssh_password" {
   default     = null
 }
 variable "ssh_public_key_path" {
-  description = "Path to the SSH public key to use for AWS VM login"
+  description = "Path to SSH public key for AWS EC2"
   type        = string
 }
+
