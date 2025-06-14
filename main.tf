@@ -9,6 +9,7 @@ module "aws" {
   region                = var.aws_region
   vm_name               = var.vm_name
   vm_size               = var.vm_size
+  ssh_public_key        = var.ssh_public_key
   ssh_allowed_ip        = var.ssh_allowed_ip
   ssh_password          = var.ssh_password
   deployment_mode       = var.deployment_mode
