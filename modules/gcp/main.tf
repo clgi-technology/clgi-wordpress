@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
+    }
+  }
+}
+
 #provider "google" {
 #  project     = var.gcp_project
 #  credentials = file(var.gcp_key_file)
