@@ -1,13 +1,6 @@
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 4.0"
-    }
-  }
-}
+# module/gcp/main.tf
 
-# No provider block; all resources will use the inherited provider
+# No provider block or required block; all resources will use the inherited provider
 
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
