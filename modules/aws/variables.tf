@@ -47,3 +47,7 @@ variable "ssh_password" {
   type        = string
   default     = null
 }
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key to use for AWS VM login"
+  type        = string
+}
