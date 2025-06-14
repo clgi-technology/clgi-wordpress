@@ -7,6 +7,13 @@ terraform {
   }
 }
 
+provider "google" {
+  project     = var.gcp_project
+  credentials = var.gcp_credentials
+  region      = var.region
+  zone        = var.zone
+}
+
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
 }
@@ -15,6 +22,7 @@ resource "google_compute_subnetwork" "subnet" {
   name          = "${var.vm_name}-subnet"
   network       = google_compute_network.vpc.id
   ip_cidr_range = "10.0.1.0/24"
+  region        = var.region
 }
 
 resource "google_compute_instance" "vm" {
