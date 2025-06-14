@@ -7,6 +7,8 @@ terraform {
   }
 }
 
+# No provider block; all resources will use the inherited provider
+
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
 }
