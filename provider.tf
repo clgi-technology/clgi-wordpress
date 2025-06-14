@@ -32,7 +32,7 @@ provider "google" {
 }
 
 provider "azurerm" {
-  features = {}
+  features  {}
 
   client_id       = var.azure_client_id
   client_secret   = var.azure_secret
