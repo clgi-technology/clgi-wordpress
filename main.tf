@@ -1,11 +1,15 @@
 # Root Main.tf file
 
+# Root Main.tf file
+
 # AWS Module
 module "aws" {
-  source = "./modules/aws"
-  count  = var.cloud_provider == "aws" ? 1 : 0
+  source    = "./modules/aws"
+  count     = var.cloud_provider == "aws" ? 1 : 0
+  providers = {
+    aws = aws
+  }
 
-  
   region                = var.aws_region
   vm_name               = var.vm_name
   vm_size               = var.vm_size
@@ -19,13 +23,14 @@ module "aws" {
   auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-# ────────────────────────────────────────────────
 # GCP Module
 module "gcp" {
-  source = "./modules/gcp"
-  count  = var.cloud_provider == "gcp" ? 1 : 0
+  source    = "./modules/gcp"
+  count     = var.cloud_provider == "gcp" ? 1 : 0
+  providers = {
+    google = google
+  }
 
-  
   gcp_project           = var.gcp_project
   gcp_credentials       = var.gcp_credentials
   region                = var.gcp_region
@@ -40,13 +45,13 @@ module "gcp" {
   auto_delete_after_24h = var.auto_delete_after_24h
 }
 
-# ────────────────────────────────────────────────
 # Azure Module
 module "azure" {
-  source = "./modules/azure"
-  count  = var.cloud_provider == "azure" ? 1 : 0
-
-  
+  source    = "./modules/azure"
+  count     = var.cloud_provider == "azure" ? 1 : 0
+  providers = {
+    azurerm = azurerm
+  }
 
   azure_client_id       = var.azure_client_id
   azure_secret          = var.azure_secret
