@@ -21,3 +21,7 @@ variable "deployment_mode" {
 variable "auto_delete_after_24h" {
   default = false
 }
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key to use for GCP VM login"
+  type        = string
+}
