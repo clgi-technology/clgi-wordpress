@@ -27,17 +27,17 @@ aws_secret_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
 aws_session_token     = "REPLACE_IF_NEEDED"
 
 # GCP (optional)
-gcp_project           = "your-gcp-project-id"
-gcp_credentials       = "your-gcp-key-file-path"  # renamed to match variable
+gcp_project           = ""    # "your-gcp-project-id"
+gcp_key_file          = ""    # "your-gcp-key-file-path"
 
 
 # Azure Credentials (optional)
-azure_client_id       = "REPLACE_WITH_YOUR_AZURE_CLIENT_ID"
-azure_secret          = "REPLACE_WITH_YOUR_AZURE_SECRET"
-azure_tenant_id       = "REPLACE_WITH_YOUR_AZURE_TENANT_ID"
-azure_subscription_id = "REPLACE_WITH_YOUR_AZURE_SUBSCRIPTION_ID"
-azure_region          = "eastus"  # specify if used
+azure_client_id       = ""    # "REPLACE_WITH_YOUR_AZURE_CLIENT_ID"
+azure_secret          = ""    # "REPLACE_WITH_YOUR_AZURE_SECRET"
+azure_tenant_id       = ""    # "REPLACE_WITH_YOUR_AZURE_TENANT_ID"
+azure_subscription_id = ""    # "REPLACE_WITH_YOUR_AZURE_SUBSCRIPTION_ID"
+azure_region          = ""    # specify if used
 
 # Optional DB/SMTP passwords - declare these in variables.tf if used
-db_password           = "example-db-password"
-smtp_password         = "example-smtp-password"
+db_password           = ""    # "example-db-password"
+smtp_password         = ""    # "example-smtp-password"
