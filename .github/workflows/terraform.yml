@@ -92,14 +92,16 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars"
+        run: terraform plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="terraform.tfvars"
+        run: terraform apply -auto-approve
 
-      - name: Show Output IP
+      - name: Export Terraform Output IP
+        id: tf_output
         run: |
-          echo "Fetching public IP from Terraform output..."
-          VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
-          echo "VM_IP=$VM_IP" >> $GITHUB_ENV
-          echo "Server IP: $VM_IP"
+          echo "vm_ip=$(terraform output -raw vm_ip)" >> $GITHUB_OUTPUT
+
+      - name: Use Output
+        run: echo "Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
+
