@@ -1,51 +1,86 @@
-# root/variables.tf
+variable "cloud_provider" {
+  description = "Which cloud provider to deploy: aws, gcp, or azure"
+  type        = string
+  default     = "aws"
+}
 
 variable "vm_name" {
   description = "Name of the virtual machine"
   type        = string
+  default     = "my-vm"
 }
 
 variable "vm_size" {
-  description = "Size of the virtual machine"
+  description = "Size of the VM instance"
   type        = string
-}
-
-variable "region" {
-  description = "Region for deployment"
-  type        = string
+  default     = "t2.micro"
 }
 
 variable "ssh_allowed_ip" {
-  description = "CIDR block for allowed SSH access"
+  description = "IP allowed to SSH to the VM"
   type        = string
+  default     = "0.0.0.0/0"
 }
 
-variable "ssh_password" {
-  description = "Optional SSH password (used in Azure)"
+# AWS specific variables
+variable "aws_region" {
+  description = "AWS region"
   type        = string
-  default     = null
+  default     = "us-east-1"
 }
 
-variable "setup_demo_clone" {
-  description = "Whether to clone a demo site"
-  type        = bool
-  default     = false
-}
-
-variable "clone_target_url" {
-  description = "URL of the site to clone"
+# GCP specific variables
+variable "gcp_region" {
+  description = "GCP region"
   type        = string
-  default     = null
+  default     = "us-central1"
 }
 
-variable "deployment_mode" {
-  description = "Deployment mode: sandbox or production"
+variable "gcp_zone" {
+  description = "GCP zone"
   type        = string
-  default     = "sandbox"
+  default     = "us-central1-a"
 }
 
-variable "auto_delete_after_24h" {
-  description = "Auto-delete environment after 24 hours?"
-  type        = bool
-  default     = false
+variable "gcp_project" {
+  description = "GCP project ID"
+  type        = string
+  default     = ""
+}
+
+variable "gcp_credentials" {
+  description = "Path to GCP credentials JSON file"
+  type        = string
+  default     = ""
+}
+
+# Azure specific variables
+variable "azure_region" {
+  description = "Azure region"
+  type        = string
+  default     = "eastus"
+}
+
+variable "azure_subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+  default     = ""
+}
+
+variable "azure_client_id" {
+  description = "Azure client ID (service principal)"
+  type        = string
+  default     = ""
+}
+
+variable "azure_client_secret" {
+  description = "Azure client secret (service principal)"
+  type        = string
+  default     = ""
+}
+
+variable "azure_tenant_id" {
+  description = "Azure tenant ID"
+  type        = string
+  default     = ""
 }
