@@ -7,6 +7,8 @@ terraform {
   }
 }
 
+# No provider block; all resources will use the inherited provider
+
 resource "azurerm_resource_group" "rg" {
   name     = "rg-${var.vm_name}"
   location = var.region
