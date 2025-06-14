@@ -21,11 +21,6 @@ clone_target_url      = "www.clgi.org"                # required only if setup_d
 ssh_password          = "YOUR_SECURE_SSH_PASSWORD"
 ssh_public_key_path   = "path/to/your/id_rsa.pub"
 
-# AWS Credentials (DO NOT COMMIT THESE — use GitHub Actions secrets or environment vars)
-aws_access_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
-aws_secret_key        = "REPLACE_WITH_ENV_VAR_OR_SECRET"
-aws_session_token     = "REPLACE_IF_NEEDED"
-
 # GCP (optional)
 gcp_project           = "dummy"    # "your-gcp-project-id"
 gcp_key_file          = "dummy"    # "your-gcp-key-file-path"
