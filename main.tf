@@ -32,6 +32,7 @@ module "gcp" {
   vm_name               = var.vm_name
   vm_size               = var.vm_size
   ssh_allowed_ip        = var.ssh_allowed_ip
+  ssh_public_key_path   = var.ssh_public_key_path
   deployment_mode       = var.deployment_mode
   setup_demo_clone      = var.setup_demo_clone
   clone_target_url      = var.clone_target_url
