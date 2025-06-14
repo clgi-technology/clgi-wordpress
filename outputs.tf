@@ -1,3 +1,5 @@
+# Root outputs.tf file
+
 output "aws_ip" {
   value       = var.cloud_provider == "AWS" ? module.aws[0].vm_ip : null
   description = "AWS Instance Public IP"
