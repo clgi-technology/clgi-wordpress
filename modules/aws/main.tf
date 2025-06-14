@@ -83,7 +83,6 @@ resource "aws_instance" "vm" {
   ami                         = "ami-0c94855ba95c71c99" # Amazon Linux 2 (us-west-2)
   instance_type               = var.vm_size
   subnet_id                   = aws_subnet.public.id
-  key_name                    = aws_key_pair.generated.key_name
   key_name                    = aws_key_pair.deployer.key_name
   vpc_security_group_ids      = [aws_security_group.ssh.id]
   associate_public_ip_address = true
