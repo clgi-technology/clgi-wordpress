@@ -1,3 +1,20 @@
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "google" {
+  alias   = "google"
+  project = var.gcp_project
+  region  = var.region
+  zone    = var.zone
+  credentials = file(var.gcp_credentials)
+}
+
 resource "google_compute_network" "vpc" {
   name = "${var.vm_name}-vpc"
 }
