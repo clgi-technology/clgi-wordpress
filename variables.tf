@@ -76,6 +76,12 @@ variable "gcp_project" {
   default     = null
 }
 
+# GCP credentials and location
+variable "gcp_key_file" {
+  description = "Path to GCP service account key JSON"
+  type        = string
+}
+
 variable "gcp_credentials" {
   description = "Path to GCP credentials JSON"
   type        = string
