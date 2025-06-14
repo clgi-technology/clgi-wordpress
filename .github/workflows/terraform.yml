@@ -8,8 +8,8 @@ on:
         description: "Choose Cloud Provider"
         required: true
         type: choice
-        options: [AWS, GCP, Azure]
-        default: AWS
+        options: [aws, gcp, azure]
+        default: aws
 
       deployment_mode:
         description: "sandbox = Django, production = WordPress"
@@ -19,7 +19,7 @@ on:
         default: sandbox
 
       auto_delete_after_24h:
-        description: "Auto-delete after 24 hours (sandbox only)?"
+        description: "Auto-delete after 24 hours?"
         required: true
         type: choice
         options: [true, false]
@@ -55,13 +55,14 @@ jobs:
       TF_VAR_auto_delete_after_24h: ${{ github.event.inputs.auto_delete_after_24h }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
-      TF_VAR_region: ${{ github.event.inputs.region }}
-      TF_VAR_ssh_ip_address: ${{ github.event.inputs.ssh_allowed_cidr }}
+      TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
+      TF_VAR_aws_region: ${{ github.event.inputs.region }}
+
+      # SSH Keys from GitHub Secrets
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-
-      # Secrets (optional, if using cloud auth in Terraform modules)
+      # AWS Auth from GitHub Secrets
       TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
@@ -71,24 +72,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Setup SSH Private Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        shell: bash
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ./
 
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars"
-        working-directory: ./
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
-        working-directory: ./
 
       - name: Show Output IP
         run: |
@@ -96,10 +100,3 @@ jobs:
           VM_IP=$(terraform output -raw vm_ip 2>/dev/null || echo "N/A")
           echo "VM_IP=$VM_IP" >> $GITHUB_ENV
           echo "Server IP: $VM_IP"
-        working-directory: ./
-      - name: Setup SSH private key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
