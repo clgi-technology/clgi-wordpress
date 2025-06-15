@@ -3,6 +3,16 @@ variable "enabled" {
   default = true
 }
 
+variable "setup_demo_clone" {
+  type    = bool
+  default = false
+}
+
+variable "clone_target_url" {
+  type    = string
+  default = ""
+}
+
 resource "tls_private_key" "key" {
   count     = var.enabled ? 1 : 0
   algorithm = "RSA"
@@ -103,21 +113,3 @@ data "aws_ami" "amazon_linux" {
   }
 
   filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-resource "aws_instance" "vm" {
-  count                       = var.enabled ? 1 : 0
-  ami                         = data.aws_ami.amazon_linux[0].id
-  instance_type               = var.vm_size
-  subnet_id                   = aws_subnet.public[0].id
-  key_name                    = aws_key_pair.deployer[0].key_name
-  vpc_security_group_ids      = [aws_security_group.ssh[0].id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = var.vm_name
-  }
-}
