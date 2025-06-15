@@ -30,6 +30,8 @@ bash
 │   └── install-wordpress.sh
 └── .github/workflows/
     └── terraform.yml
+...
+
 🚀 Deployment Options
 Cloud Provider	Deployment Modes	Tech Stack
 AWS	sandbox, production	Django or WordPress
