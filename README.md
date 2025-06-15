@@ -1,176 +1,103 @@
-🌐 Terraform Multi-Cloud Deployment
-This project enables deployment of Django (sandbox) or WordPress (production) environments to AWS, GCP, or Azure, using:
+🧾 README.md – Terraform Multi-Cloud Deployment
+markdown
+Copy
+Edit
+# 🌐 Terraform Multi-Cloud Deployment Framework
 
-Modularized Terraform infrastructure
+This project provides a modular, cloud-agnostic Terraform deployment system for provisioning VMs on **AWS**, **GCP**, and **Azure**, with support for:
 
-GitHub Actions workflows
+- ✅ Environment-based deployments (sandbox vs. production)
+- ✅ Tech stack provisioning (Django or WordPress)
+- ✅ Auto-expiry logic (auto-delete after 24h)
+- ✅ GitHub Actions CI/CD integration
+- ✅ Optional website clone on VM
 
-Separate deployment environments (workspaces) per cloud provider
+---
 
-📁 Project Structure
+## 📁 Project Structure
 
-
-|   main.tf
-|   outputs.tf
-|   README.md
-|   terraform.tfvars
-|   terraform_deploy_key
-|   terraform_deploy_key.pub
-|   variables.tf
-|
-+---.github
-|   \---workflows
-|           terraform-apply-only.yml
-|           terraform.yml
-|
-+---clgi-wordpress
-|   |   main.tf
-|   |   outputs.tf
-|   |   provider.tf
-|   |   README.md
-|   |   terraform.tfvars
-|   |   variables.tf
-|   |
-|   +---.github
-|   |   \---workflows
-|   |           deploy.yml
-|   |           terraform-apply-only.yml
-|   |           terraform.yml
-|   |
-|   +---deployments
-|   |   +---aws
-|   |   |       main.tf
-|   |   |       terraform.tfvars
-|   |   |       variables.tf
-|   |   |
-|   |   +---azure
-|   |   |       main.tf
-|   |   |       terraform.tfvars
-|   |   |       variables.tf
-|   |   |
-|   |   \---gcp
-|   |           main.tf
-|   |           terraform.tfvars
-|   |           variables.tf
-|   |
-|   +---examples
-|   |   +---django
-|   |   |       main.tf
-|   |   |
-|   |   \---wordpress
-|   |           main.tf
-|   |
-|   +---modules
-|   |   +---aws
-|   |   |       main.tf
-|   |   |       outputs.tf
-|   |   |       variables.tf
-|   |   |
-|   |   +---azure
-|   |   |       main.tf
-|   |   |       outputs.tf
-|   |   |       variables.tf
-|   |   |
-|   |   +---cloud_vm
-|   |   |   |   outputs.tf
-|   |   |   |
-|   |   |   \---security_group
-|   |   |           main.tf
-|   |   |           outputs.tf
-|   |   |           variables.tf
-|   |   |
-|   |   +---gcp
-|   |   |       main.tf
-|   |   |       outputs.tf
-|   |   |       variables.tf
-|   |   |
-|   |   \---security_group
-|   |           main.tf
-|   |           outputs.tf
-|   |           variables.tf
-|   |           versions.txt
-|   |
-|   +---scripts
-|   |       install-clgi.sh
-|   |       install-django.sh
-|   |       install-wordpress.sh
-|   |
-|   \---templates
-|           user_data.sh.tmpl
-
-
+```bash
+.
+├── deployments/
+│   ├── aws/         # Terraform root module for AWS
+│   ├── gcp/         # Terraform root module for GCP
+│   └── azure/       # Terraform root module for Azure
+├── modules/
+│   ├── aws/         # Reusable AWS module
+│   ├── gcp/         # Reusable GCP module
+│   ├── azure/       # Reusable Azure module
+│   └── security_groups/
+├── templates/
+│   └── user_data.sh.tmpl  # Cloud-init bootstrap template
+├── scripts/
+│   ├── install-django.sh
+│   ├── install-wordpress.sh
+│   └── install-clgi.sh
+├── .github/workflows/
+│   └── terraform.yml     # GitHub Actions workflow
+├── legacy/
+│   ├── main.tf           # 🛑 Deprecated root entry point
+│   ├── variables.tf
+│   ├── provider.tf
+│   ├── outputs.tf
+│   └── terraform.tfvars
+└── README.md
 🚀 Deployment Options
-Cloud Provider	Deployment Modes	Tech Stack
-AWS	sandbox, production	Django or WordPress
-GCP	sandbox, production	Django or WordPress
-Azure	sandbox, production	Django or WordPress
+Cloud Provider	Modes	Tech Stack
+AWS	sandbox / production	Django or WordPress
+GCP	sandbox / production	Django or WordPress
+Azure	sandbox / production	Django or WordPress
 
-...
+⚙️ GitHub Actions Workflow
+Trigger deployment from GitHub UI or CLI:
 
-✅ Requirements
-Terraform v1.3+
+File: .github/workflows/terraform.yml
 
-GitHub CLI (for manual dispatch)
+Inputs:
 
-SSH key pair (used to SSH into VMs)
+cloud_provider: aws, gcp, azure
 
-🔐 GitHub Secrets
-Secret Name	Description
-AWS_ACCESS_KEY_ID	AWS Access Key
-AWS_SECRET_ACCESS_KEY	AWS Secret Key
-AWS_SESSION_TOKEN	AWS Session Token (optional)
-SSH_PUBLIC_KEY	Contents of your id_rsa.pub file
-SSH_PRIVATE_KEY	Contents of your id_rsa file
-SSH_PASSWORD	Optional login password
+deployment_mode: sandbox or production
 
-🧠 How It Works
-Modular Design
-Infrastructure logic is abstracted into reusable modules under modules/*.
+auto_delete_after_24h: true / false
 
-Deployment Workspaces
-Each cloud has its own Terraform workspace under deployments/{cloud} with its own backend, providers, and variable wiring.
+vm_name, vm_size, region, ssh_allowed_cidr
 
-GitHub Actions Workflow
-A single workflow (.github/workflows/terraform.yml) dynamically applies Terraform configurations based on user input (aws, gcp, azure).
+Secrets required: SSH_PUBLIC_KEY, AWS_ACCESS_KEY_ID, etc.
 
-📦 How to Deploy
-GitHub Actions (Recommended)
-Go to Actions tab
+Workflow runs:
 
-Select Terraform Multi-Cloud Deployment
+Initializes Terraform in the selected deployment folder
 
-Click "Run workflow"
+Applies infrastructure
 
-Choose:
+Provisions software via user_data.sh.tmpl
 
-Cloud provider (aws, gcp, azure)
+Outputs deployed VM IP
 
-Deployment mode (sandbox, production)
+🔁 Optional: Demo Website Cloning
+Set the following variables (via terraform.tfvars or GitHub inputs) to clone a site to the VM:
 
-VM name, region, CIDR, etc.
+h
+Copy
+Edit
+setup_demo_clone   = true
+clone_target_url   = "https://github.com/example/my-demo-app.git"
+🧨 Destroying Infrastructure
+A separate workflow (terraform-destroy.yml) can be used to destroy VMs by:
 
-Deployment runs automatically using the correct workspace.
+Cloud provider
 
-🧹 Auto-Deletion (Optional)
-For sandbox deployments, you can opt into a 24-hour auto-deletion feature by setting:
+Instance name or tag
+
+Expired destroy_after timestamp (coming soon)
+
+🧹 Legacy Files
+Files previously in the project root have been moved to /legacy and are no longer used. All deployment logic now runs under the deployments/<cloud>/ structure.
+
+📬 Feedback & Contributions
+Feel free to open issues, PRs, or suggest new cloud providers or frameworks you'd like integrated!
 
 yaml
 Copy
 Edit
-auto_delete_after_24h: true
-This creates a VM tag or cron trigger (implementation varies by module).
-
-🛠️ Manual Deployment (CLI)
-To deploy to AWS manually:
-
-bash
-Copy
-Edit
-cd deployments/aws
-
-terraform init
-terraform plan -var-file=terraform.tfvars
-terraform apply -auto-approve -var-file=terraform.tfvars
-📤 Outputs
-Terraform will output the public IP of the deployed VM, visible in both the CLI and GitHub Action logs.
-
