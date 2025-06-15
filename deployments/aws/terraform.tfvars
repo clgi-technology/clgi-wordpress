@@ -1,5 +1,5 @@
 aws_region            = "us-west-2"
-aws_access_key        = "REPLACE_ME" # Use env vars or GitHub secrets
+aws_access_key        = "REPLACE_ME" # Ideally set via env or secrets
 aws_secret_key        = "REPLACE_ME"
 aws_session_token     = "REPLACE_IF_NEEDED"
 
