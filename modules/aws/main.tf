@@ -1,13 +1,48 @@
-resource "tls_private_key" "key" {
+variable "enabled" {
+  description = "Enable or disable AWS resources"
+  type        = bool
+  default     = true
+}
+
+variable "vm_name" {
+  description = "Name for VM and related resources"
+  type        = string
+}
+
+variable "vm_size" {
+  description = "Instance size"
+  type        = string
+}
+
+variable "ssh_allowed_ip" {
+  description = "CIDR block allowed to SSH"
+  type        = string
+}
+
+variable "user_data" {
+  description = "User data script for instance"
+  type        = string
+  default     = ""
+}
+
+variable "security_group_id" {
+  description = "Optional Security Group ID to attach to instance"
+  type        = string
+  default     = ""
+}
+
+# Generate TLS private key
+resource "tls_private_key" "deployer_key" {
   count     = var.enabled ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
+# AWS key pair created from generated public key
 resource "aws_key_pair" "deployer" {
   count      = var.enabled ? 1 : 0
   key_name   = "${var.vm_name}-key"
-  public_key = var.ssh_public_key
+  public_key = tls_private_key.deployer_key[0].public_key_openssh
 }
 
 data "aws_availability_zones" "available" {
@@ -113,7 +148,6 @@ resource "aws_instance" "vm" {
   user_data                   = var.user_data
   vpc_security_group_ids      = var.security_group_id != "" ? [var.security_group_id] : [aws_security_group.ssh[0].id]
 
-
   tags = {
     Name = var.vm_name
   }
@@ -121,4 +155,18 @@ resource "aws_instance" "vm" {
 
 output "vpc_id" {
   value = aws_vpc.main[0].id
+}
+
+output "vm_ip" {
+  value = aws_instance.vm[0].public_ip
+}
+
+output "instance_id" {
+  value = aws_instance.vm[0].id
+}
+
+output "private_key_pem" {
+  description = "Private key to SSH into the instance"
+  value       = tls_private_key.deployer_key[0].private_key_pem
+  sensitive   = true
 }
