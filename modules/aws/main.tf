@@ -1,70 +1,3 @@
-# modules/aws/main.tf
-
-variable "enabled" {
-  type    = bool
-  default = true
-}
-
-variable "vm_name" {
-  description = "Name of the VM"
-  type        = string
-}
-
-variable "vm_size" {
-  description = "Size of the VM"
-  type        = string
-}
-
-variable "region" {
-  description = "Region for AWS resources"
-  type        = string
-}
-
-variable "ssh_allowed_ip" {
-  description = "CIDR block for allowed SSH access"
-  type        = string
-}
-
-variable "deployment_mode" {
-  description = "Deployment mode (sandbox or production)"
-  type        = string
-}
-
-variable "setup_demo_clone" {
-  description = "Whether to clone a demo site"
-  type        = bool
-  default     = false
-}
-
-variable "clone_target_url" {
-  description = "URL of the demo site to clone"
-  type        = string
-  default     = ""
-}
-
-variable "auto_delete_after_24h" {
-  description = "Whether to auto-destroy the infra after 24h"
-  type        = bool
-  default     = false
-}
-
-variable "ssh_password" {
-  description = "Optional password for SSH access"
-  type        = string
-  default     = null
-}
-
-variable "ssh_public_key" {
-  description = "Public SSH key to inject into AWS EC2"
-  type        = string
-}
-
-variable "user_data" {
-  description = "Startup script to configure the VM"
-  type        = string
-  default     = ""
-}
-
 resource "tls_private_key" "key" {
   count     = var.enabled ? 1 : 0
   algorithm = "RSA"
@@ -134,4 +67,53 @@ resource "aws_route_table_association" "assoc" {
 }
 
 resource "aws_security_group" "ssh" {
-  count       = var.enabled ?
+  count       = var.enabled ? 1 : 0
+  name        = "${var.vm_name}-sg"
+  description = "Allow SSH"
+  vpc_id      = aws_vpc.main[0].id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.ssh_allowed_ip]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+data "aws_ami" "amazon_linux" {
+  count       = var.enabled ? 1 : 0
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+resource "aws_instance" "vm" {
+  count                       = var.enabled ? 1 : 0
+  ami                         = data.aws_ami.amazon_linux[0].id
+  instance_type               = var.vm_size
+  subnet_id                   = aws_subnet.public[0].id
+  key_name                    = aws_key_pair.deployer[0].key_name
+  vpc_security_group_ids      = [aws_security_group.ssh[0].id]
+  associate_public_ip_address = true
+  user_data                   = var.user_data
+
+  tags = {
+    Name = var.vm_name
+  }
+}
