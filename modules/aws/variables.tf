@@ -1,4 +1,8 @@
-# modules/aws/variables.tf
+variable "enabled" {
+  type    = bool
+  default = true
+}
+
 variable "vm_name" {
   description = "Name of the VM"
   type        = string
@@ -45,7 +49,7 @@ variable "auto_delete_after_24h" {
 variable "ssh_password" {
   description = "Optional password for SSH access"
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "ssh_public_key" {
@@ -54,7 +58,7 @@ variable "ssh_public_key" {
 }
 
 variable "user_data" {
-  description = "Rendered user data script to bootstrap the VM"
+  description = "Startup script to configure the VM"
   type        = string
   default     = ""
 }
