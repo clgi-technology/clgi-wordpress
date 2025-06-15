@@ -24,6 +24,18 @@ on:
         options: [true, false]
         default: false
 
+      setup_demo_clone:
+        description: "Setup demo clone by scraping a website?"
+        required: true
+        type: choice
+        options: [true, false]
+        default: false
+
+      clone_target_url:
+        description: "URL to scrape or clone (e.g., https://www.clgi.org)"
+        required: false
+        default: ""
+
       vm_name:
         description: "VM Name"
         required: true
@@ -56,6 +68,8 @@ jobs:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
       TF_VAR_auto_delete_after_24h: ${{ github.event.inputs.auto_delete_after_24h }}
+      TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone }}
+      TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
