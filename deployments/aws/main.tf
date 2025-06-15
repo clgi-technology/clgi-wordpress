@@ -17,7 +17,7 @@ provider "aws" {
 }
 
 data "template_file" "user_data" {
-  template = file("${path.module}/../../templates/user-data.sh.tmpl")
+  template = file("${path.module}/../../templates/user_data.sh.tmpl")
 
   vars = {
     deployment_mode  = var.deployment_mode
