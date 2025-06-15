@@ -9,7 +9,7 @@ output "instance_id" {
 }
 
 output "region" {
-  value = var.region
+  value = var.aws_region
 }
 
 output "private_key_pem" {
