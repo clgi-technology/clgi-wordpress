@@ -68,7 +68,7 @@ jobs:
       TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
-      TF_VAR_region: ${{ github.event.inputs.region }}
+      TF_VAR_aws_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
 
       # SSH Keys from GitHub Secrets
