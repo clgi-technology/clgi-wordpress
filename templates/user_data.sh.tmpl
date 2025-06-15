@@ -1,58 +1,32 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting VM setup..."
-echo "Deployment Mode: ${deployment_mode}"
-echo "Clone Target: ${clone_target_url}"
-echo "Demo Clone Enabled: ${setup_demo_clone}"
+echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
+mkdir -p /home/ubuntu/scripts
+cd /home/ubuntu/scripts
 
-# Variables
-SCRIPTS_BASE_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
+# Download provisioning scripts from GitHub
+SCRIPTS_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
 
-# Update system
-apt-get update -y
-apt-get upgrade -y
+echo "⬇️ Downloading scripts from $SCRIPTS_URL"
+curl -O "$SCRIPTS_URL/install-django.sh"
+curl -O "$SCRIPTS_URL/install-wordpress.sh"
+curl -O "$SCRIPTS_URL/install-clgi.sh"
+chmod +x install-*.sh
 
-# Install common dependencies
-apt-get install -y curl wget unzip git
-
-# Create script workspace
-mkdir -p /opt/setup-scripts
-cd /opt/setup-scripts
-
-# Fetch shared scripts
-wget -q "${SCRIPTS_BASE_URL}/install-wordpress.sh" -O install-wordpress.sh
-chmod +x install-wordpress.sh
-
-wget -q "${SCRIPTS_BASE_URL}/install-django.sh" -O install-django.sh
-chmod +x install-django.sh
-
-wget -q "${SCRIPTS_BASE_URL}/install-clgi.sh" -O install-clgi.sh
-chmod +x install-clgi.sh
-
-# Optional: fetch Python clone script if needed
-if [ "${setup_demo_clone}" = "true" ]; then
-  echo "🌐 Fetching clone_clgi.py..."
-  wget -q "${SCRIPTS_BASE_URL}/clone_clgi.py" -O clone_clgi.py
-fi
-
-# Run deployment mode logic
-if [ "${deployment_mode}" = "production" ]; then
-  echo "🟢 Installing WordPress stack..."
-  bash install-wordpress.sh
-
-elif [ "${deployment_mode}" = "sandbox" ]; then
-  echo "🟠 Installing Django stack..."
-  bash install-django.sh
-
-  if [ "${setup_demo_clone}" = "true" ]; then
-    echo "🌐 Integrating CLGI.org static clone..."
-    bash install-clgi.sh
-  fi
-
+# Run the installer based on deployment mode
+if [ "${deployment_mode}" = "sandbox" ]; then
+  echo "⚙️ Installing Django stack..."
+  ./install-django.sh
 else
-  echo "❌ ERROR: Unknown deployment_mode: ${deployment_mode}"
-  exit 1
+  echo "⚙️ Installing WordPress stack..."
+  ./install-wordpress.sh
 fi
 
-echo "✅ VM setup complete!"
+# Optionally clone CLGI.org HTML
+%{ if setup_demo_clone == "true" }
+echo "🌐 Cloning demo content from: ${clone_target_url}"
+./install-clgi.sh
+%{ endif }
+
+echo "✅ Provisioning complete."
