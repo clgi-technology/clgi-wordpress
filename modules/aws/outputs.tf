@@ -1,3 +1,7 @@
+output "vpc_id" {
+  value = aws_vpc.main[0].id
+}
+
 output "vm_ip" {
   description = "Public IP address of the AWS EC2 instance"
   value       = length(aws_instance.vm) > 0 ? aws_instance.vm[0].public_ip : null
@@ -20,7 +24,7 @@ output "destroy_after" {
 
 output "private_key_pem" {
   description = "Private key to SSH into the instance"
-  value       = tls_private_key.key[0].private_key_pem
+  value       = tls_private_key.deployer_key[0].private_key_pem
   sensitive   = true
 }
 
@@ -28,4 +32,3 @@ output "public_ip" {
   description = "Public IP address of the AWS EC2 instance"
   value       = aws_instance.vm[0].public_ip
 }
-
