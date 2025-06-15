@@ -1,3 +1,4 @@
+# modules/aws/variables.tf
 variable "vm_name" {
   description = "Name of the VM"
   type        = string
@@ -50,4 +51,10 @@ variable "ssh_password" {
 variable "ssh_public_key" {
   description = "Public SSH key to inject into AWS EC2"
   type        = string
+}
+
+variable "user_data" {
+  description = "Rendered user data script to bootstrap the VM"
+  type        = string
+  default     = ""
 }
