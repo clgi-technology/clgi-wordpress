@@ -23,3 +23,13 @@ output "private_key_pem" {
   value       = tls_private_key.key[0].private_key_pem
   sensitive   = true
 }
+
+output "public_ip" {
+  description = "Public IP address of the AWS EC2 instance"
+  value       = aws_instance.vm[0].public_ip
+}
+
+output "instance_id" {
+  description = "AWS EC2 instance ID"
+  value       = aws_instance.vm[0].id
+}
