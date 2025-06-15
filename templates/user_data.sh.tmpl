@@ -1,74 +1,58 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting VM setup with DEPLOYMENT_MODE=${deployment_mode}"
+echo "🚀 Starting VM setup..."
+echo "Deployment Mode: ${deployment_mode}"
+echo "Clone Target: ${clone_target_url}"
+echo "Demo Clone Enabled: ${setup_demo_clone}"
 
-# Update and install common dependencies
+# Variables
+SCRIPTS_BASE_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
+
+# Update system
 apt-get update -y
 apt-get upgrade -y
 
-if [ "${deployment_mode}" = "production" ]; then
-    echo "🟢 Installing WordPress stack..."
-    apt-get install -y apache2 mysql-server php php-mysql unzip curl wget
-    systemctl enable apache2 mysql
+# Install common dependencies
+apt-get install -y curl wget unzip git
 
-    # Download and setup WordPress
-    wget https://wordpress.org/latest.tar.gz -P /tmp
-    tar -xzf /tmp/latest.tar.gz -C /var/www/html/
-    chown -R www-data:www-data /var/www/html/
+# Create script workspace
+mkdir -p /opt/setup-scripts
+cd /opt/setup-scripts
 
-    # Setup MySQL DB and user
-    mysql -e "CREATE DATABASE wordpress_db;"
-    mysql -e "GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wordpress_user'@'localhost' IDENTIFIED BY 'securepassword';"
-    mysql -e "FLUSH PRIVILEGES;"
+# Fetch shared scripts
+wget -q "${SCRIPTS_BASE_URL}/install-wordpress.sh" -O install-wordpress.sh
+chmod +x install-wordpress.sh
 
-elif [ "${deployment_mode}" = "sandbox" ]; then
-    echo "🟠 Installing Django stack..."
-    apt-get install -y python3-pip python3-venv apache2 libapache2-mod-wsgi-py3
+wget -q "${SCRIPTS_BASE_URL}/install-django.sh" -O install-django.sh
+chmod +x install-django.sh
 
-    python3 -m venv /opt/django-env
-    source /opt/django-env/bin/activate
-    pip install django
+wget -q "${SCRIPTS_BASE_URL}/install-clgi.sh" -O install-clgi.sh
+chmod +x install-clgi.sh
 
-    django-admin startproject mysite /var/www/html/
-
-    # Optional CLGI.org clone integration
-    if [ "${setup_demo_clone}" = "true" ]; then
-        echo "🌐 Cloning CLGI.org into Django..."
-        # Assuming install-clgi.sh and clone_clgi.py are present or fetched here
-        bash /home/ubuntu/scripts/install-clgi.sh
-    fi
-
-    # Apache setup for Django
-    cat <<EOF > /etc/apache2/sites-available/django.conf
-<VirtualHost *:80>
-    ServerAdmin admin@localhost
-    DocumentRoot /var/www/html/mysite
-
-    Alias /static /var/www/html/mysite/static
-    <Directory /var/www/html/mysite/static>
-        Require all granted
-    </Directory>
-
-    <Directory /var/www/html/mysite/mysite>
-        <Files wsgi.py>
-            Require all granted
-        </Files>
-    </Directory>
-
-    WSGIDaemonProcess mysite python-path=/var/www/html/mysite python-home=/opt/django-env
-    WSGIProcessGroup mysite
-    WSGIScriptAlias / /var/www/html/mysite/mysite/wsgi.py
-</VirtualHost>
-EOF
-
-    a2ensite django
-    a2enmod wsgi
-    systemctl reload apache2
-
-else
-    echo "⚠️ Unknown deployment mode: ${deployment_mode}"
-    exit 1
+# Optional: fetch Python clone script if needed
+if [ "${setup_demo_clone}" = "true" ]; then
+  echo "🌐 Fetching clone_clgi.py..."
+  wget -q "${SCRIPTS_BASE_URL}/clone_clgi.py" -O clone_clgi.py
 fi
 
-echo "✅ Setup complete!"
+# Run deployment mode logic
+if [ "${deployment_mode}" = "production" ]; then
+  echo "🟢 Installing WordPress stack..."
+  bash install-wordpress.sh
+
+elif [ "${deployment_mode}" = "sandbox" ]; then
+  echo "🟠 Installing Django stack..."
+  bash install-django.sh
+
+  if [ "${setup_demo_clone}" = "true" ]; then
+    echo "🌐 Integrating CLGI.org static clone..."
+    bash install-clgi.sh
+  fi
+
+else
+  echo "❌ ERROR: Unknown deployment_mode: ${deployment_mode}"
+  exit 1
+fi
+
+echo "✅ VM setup complete!"
