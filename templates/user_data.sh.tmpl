@@ -1,43 +1,74 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
-echo "Starting user data script..."
+echo "🚀 Starting VM setup with DEPLOYMENT_MODE=${deployment_mode}"
 
-# Update and install dependencies
-/usr/bin/apt-get update
-/usr/bin/apt-get install -y apache2 php libapache2-mod-php php-mysql unzip curl wget
+# Update and install common dependencies
+apt-get update -y
+apt-get upgrade -y
 
-# Enable and start Apache
-/usr/bin/systemctl enable apache2
-/usr/bin/systemctl start apache2
+if [ "${deployment_mode}" = "production" ]; then
+    echo "🟢 Installing WordPress stack..."
+    apt-get install -y apache2 mysql-server php php-mysql unzip curl wget
+    systemctl enable apache2 mysql
 
-# Wait a few seconds to ensure Apache is running
-sleep 5
+    # Download and setup WordPress
+    wget https://wordpress.org/latest.tar.gz -P /tmp
+    tar -xzf /tmp/latest.tar.gz -C /var/www/html/
+    chown -R www-data:www-data /var/www/html/
 
-echo "Removing default Apache site content..."
-rm -rf /var/www/html/*
+    # Setup MySQL DB and user
+    mysql -e "CREATE DATABASE wordpress_db;"
+    mysql -e "GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wordpress_user'@'localhost' IDENTIFIED BY 'securepassword';"
+    mysql -e "FLUSH PRIVILEGES;"
 
-if [ "${setup_demo_clone}" = "true" ]; then
-  echo "Cloning demo site from ${clone_target_url}..."
-  /usr/bin/wget --mirror --convert-links --adjust-extension --page-requisites --no-parent "${clone_target_url}" -P /var/www/html
+elif [ "${deployment_mode}" = "sandbox" ]; then
+    echo "🟠 Installing Django stack..."
+    apt-get install -y python3-pip python3-venv apache2 libapache2-mod-wsgi-py3
 
-  echo "Setting ownership and permissions for cloned site..."
-  /bin/chown -R www-data:www-data /var/www/html
-  /bin/chmod -R 755 /var/www/html
+    python3 -m venv /opt/django-env
+    source /opt/django-env/bin/activate
+    pip install django
+
+    django-admin startproject mysite /var/www/html/
+
+    # Optional CLGI.org clone integration
+    if [ "${setup_demo_clone}" = "true" ]; then
+        echo "🌐 Cloning CLGI.org into Django..."
+        # Assuming install-clgi.sh and clone_clgi.py are present or fetched here
+        bash /home/ubuntu/scripts/install-clgi.sh
+    fi
+
+    # Apache setup for Django
+    cat <<EOF > /etc/apache2/sites-available/django.conf
+<VirtualHost *:80>
+    ServerAdmin admin@localhost
+    DocumentRoot /var/www/html/mysite
+
+    Alias /static /var/www/html/mysite/static
+    <Directory /var/www/html/mysite/static>
+        Require all granted
+    </Directory>
+
+    <Directory /var/www/html/mysite/mysite>
+        <Files wsgi.py>
+            Require all granted
+        </Files>
+    </Directory>
+
+    WSGIDaemonProcess mysite python-path=/var/www/html/mysite python-home=/opt/django-env
+    WSGIProcessGroup mysite
+    WSGIScriptAlias / /var/www/html/mysite/mysite/wsgi.py
+</VirtualHost>
+EOF
+
+    a2ensite django
+    a2enmod wsgi
+    systemctl reload apache2
 
 else
-  echo "Downloading and installing latest WordPress..."
-  cd /tmp
-  /usr/bin/curl -O https://wordpress.org/latest.tar.gz
-  /bin/tar -xzf latest.tar.gz
-  /bin/cp -r wordpress/* /var/www/html/
-  
-  echo "Setting ownership and permissions for WordPress..."
-  /bin/chown -R www-data:www-data /var/www/html
-  /bin/chmod -R 755 /var/www/html
+    echo "⚠️ Unknown deployment mode: ${deployment_mode}"
+    exit 1
 fi
 
-echo "Restarting Apache..."
-/usr/bin/systemctl restart apache2
-
-echo "User data script completed."
+echo "✅ Setup complete!"
