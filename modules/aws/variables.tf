@@ -1,6 +1,7 @@
 variable "enabled" {
-  type    = bool
-  default = true
+  description = "Enable or disable AWS resources"
+  type        = bool
+  default     = true
 }
 
 variable "vm_name" {
@@ -69,7 +70,6 @@ variable "security_group_id" {
   default     = ""
 }
 
-# AWS credentials (optional, usually best passed as environment variables)
 variable "aws_access_key" {
   type        = string
   description = "AWS Access Key"
