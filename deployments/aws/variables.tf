@@ -87,6 +87,12 @@ variable "aws_session_token" {
   default     = ""
 }
 
+variable "aws_region" {
+  description = "AWS Region"
+  type        = string
+  default     = "us-west-2"  # or your preferred default
+}
+
 #############################
 # ☁️ GCP-Specific Variables
 #############################
