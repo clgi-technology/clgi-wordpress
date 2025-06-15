@@ -8,29 +8,96 @@ GitHub Actions workflows
 Separate deployment environments (workspaces) per cloud provider
 
 📁 Project Structure
-bash
-./
-├── main.tf (legacy entry point - no longer used directly)
-├── variables.tf
-├── terraform.tfvars
-├── modules/
-│   ├── aws/
-│   ├── gcp/
-│   ├── azure/
-│   └── security_groups/
-├── deployments/
-│   ├── aws/
-│   ├── gcp/
-│   └── azure/
-├── templates/
-│   └── user_data.sh.tmpl
-├── scripts/
-│   ├── install-clgi.sh
-│   ├── install-django.sh
-│   └── install-wordpress.sh
-└── .github/workflows/
-    └── terraform.yml
-...
+
+
+|   main.tf
+|   outputs.tf
+|   README.md
+|   terraform.tfvars
+|   terraform_deploy_key
+|   terraform_deploy_key.pub
+|   variables.tf
+|
++---.github
+|   \---workflows
+|           terraform-apply-only.yml
+|           terraform.yml
+|
++---clgi-wordpress
+|   |   main.tf
+|   |   outputs.tf
+|   |   provider.tf
+|   |   README.md
+|   |   terraform.tfvars
+|   |   variables.tf
+|   |
+|   +---.github
+|   |   \---workflows
+|   |           deploy.yml
+|   |           terraform-apply-only.yml
+|   |           terraform.yml
+|   |
+|   +---deployments
+|   |   +---aws
+|   |   |       main.tf
+|   |   |       terraform.tfvars
+|   |   |       variables.tf
+|   |   |
+|   |   +---azure
+|   |   |       main.tf
+|   |   |       terraform.tfvars
+|   |   |       variables.tf
+|   |   |
+|   |   \---gcp
+|   |           main.tf
+|   |           terraform.tfvars
+|   |           variables.tf
+|   |
+|   +---examples
+|   |   +---django
+|   |   |       main.tf
+|   |   |
+|   |   \---wordpress
+|   |           main.tf
+|   |
+|   +---modules
+|   |   +---aws
+|   |   |       main.tf
+|   |   |       outputs.tf
+|   |   |       variables.tf
+|   |   |
+|   |   +---azure
+|   |   |       main.tf
+|   |   |       outputs.tf
+|   |   |       variables.tf
+|   |   |
+|   |   +---cloud_vm
+|   |   |   |   outputs.tf
+|   |   |   |
+|   |   |   \---security_group
+|   |   |           main.tf
+|   |   |           outputs.tf
+|   |   |           variables.tf
+|   |   |
+|   |   +---gcp
+|   |   |       main.tf
+|   |   |       outputs.tf
+|   |   |       variables.tf
+|   |   |
+|   |   \---security_group
+|   |           main.tf
+|   |           outputs.tf
+|   |           variables.tf
+|   |           versions.txt
+|   |
+|   +---scripts
+|   |       install-clgi.sh
+|   |       install-django.sh
+|   |       install-wordpress.sh
+|   |
+|   \---templates
+|           user_data.sh.tmpl
+
 
 🚀 Deployment Options
 Cloud Provider	Deployment Modes	Tech Stack
