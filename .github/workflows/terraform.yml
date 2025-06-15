@@ -1,6 +1,8 @@
 # terraform.yml file
 name: Terraform Multi-Cloud Deployment
 
+working-directory: ./deployments/aws
+
 on:
   workflow_dispatch:
     inputs:
