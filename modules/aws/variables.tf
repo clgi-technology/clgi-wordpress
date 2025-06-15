@@ -62,3 +62,8 @@ variable "user_data" {
   type        = string
   default     = ""
 }
+variable "security_group_id" {
+  description = "ID of the security group to associate with the instance"
+  type        = string
+  default     = ""
+}
