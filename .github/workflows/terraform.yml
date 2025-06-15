@@ -60,10 +60,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./deployments/${{ github.event.inputs.cloud_provider }}
-
     env:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
@@ -112,13 +108,13 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
       - name: Terraform Plan
-        run: terraform plan \
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan \
           -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
           -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
           -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
@@ -136,7 +132,7 @@ jobs:
           -var="aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve \
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve \
           -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
           -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
           -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
@@ -156,7 +152,7 @@ jobs:
       - name: Export Terraform Output IP
         id: tf_output
         run: |
-          echo "vm_ip=$(terraform output -raw vm_ip)" >> $GITHUB_OUTPUT
+          echo "vm_ip=$(terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} output -raw vm_ip)" >> $GITHUB_OUTPUT
 
       - name: Show Output
         run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
