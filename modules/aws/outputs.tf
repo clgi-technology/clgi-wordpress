@@ -29,7 +29,3 @@ output "public_ip" {
   value       = aws_instance.vm[0].public_ip
 }
 
-output "instance_id" {
-  description = "AWS EC2 instance ID"
-  value       = aws_instance.vm[0].id
-}
