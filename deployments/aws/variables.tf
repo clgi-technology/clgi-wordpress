@@ -135,3 +135,19 @@ variable "azure_tenant_id" {
   sensitive   = true
   default     = ""
 }
+
+#############################
+# 🔁 Demo Website Clone Variables
+#############################
+
+variable "setup_demo_clone" {
+  type        = bool
+  description = "Whether to clone the demo website onto the VM"
+  default     = false
+}
+
+variable "clone_target_url" {
+  type        = string
+  description = "URL or repo for the demo website to clone"
+  default     = ""
+}
