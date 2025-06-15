@@ -118,3 +118,7 @@ resource "aws_instance" "vm" {
     Name = var.vm_name
   }
 }
+
+output "vpc_id" {
+  value = aws_vpc.main[0].id
+}
