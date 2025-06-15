@@ -8,34 +8,26 @@ This project uses [Terraform](https://www.terraform.io/) to provision virtual ma
 
 ```bash
 ./
-├── main.tf
+├── main.tf (legacy entry point - no longer used directly)
 ├── variables.tf
-├── provider.tf
-├── outputs.tf
 ├── terraform.tfvars
+├── modules/
+│   ├── aws/
+│   ├── gcp/
+│   ├── azure/
+│   └── security_groups/
+├── deployments/
+│   ├── aws/
+│   ├── gcp/
+│   └── azure/
 ├── templates/
-        └── user_data.sh.tmpl
+│   └── user_data.sh.tmpl
 ├── scripts/
-        ├── install-clgi.sh
-        ├── install-django.sh
-        └── install-wordpress.sh
-└── modules/
-    ├── aws/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    ├── gcp/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── azure/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── security_groups/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
+│   ├── install-clgi.sh
+│   ├── install-django.sh
+│   └── install-wordpress.sh
+└── .github/workflows/
+    └── terraform.yml
 
 ```
 
