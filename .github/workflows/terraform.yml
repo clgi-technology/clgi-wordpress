@@ -1,7 +1,4 @@
-# terraform.yml file
 name: Terraform Multi-Cloud Deployment
-
-working-directory: ./deployments/aws
 
 on:
   workflow_dispatch:
@@ -51,6 +48,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./deployments/${{ github.event.inputs.cloud_provider }}
+
     env:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
@@ -58,23 +59,18 @@ jobs:
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
-      TF_VAR_aws_region: ${{ github.event.inputs.region }}
+      TF_VAR_region: ${{ github.event.inputs.region }}
 
       # SSH Keys from GitHub Secrets
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # AWS Auth from GitHub Secrets
-      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Debug Env Vars
+      - name: Debug TF Vars
         run: env | grep TF_VAR_
 
       - name: Setup SSH Private Key
@@ -82,7 +78,21 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-        shell: bash
+
+      - name: Load Cloud Provider Credentials
+        run: |
+          if [[ "${{ github.event.inputs.cloud_provider }}" == "aws" ]]; then
+            echo "TF_VAR_aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "TF_VAR_aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+            echo "TF_VAR_aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event.inputs.cloud_provider }}" == "gcp" ]]; then
+            echo "GOOGLE_CREDENTIALS=${{ secrets.GCP_CREDENTIALS }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event.inputs.cloud_provider }}" == "azure" ]]; then
+            echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          fi
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -94,16 +104,19 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -var-file="terraform.tfvars"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var-file="terraform.tfvars"
 
       - name: Export Terraform Output IP
         id: tf_output
         run: |
           echo "vm_ip=$(terraform output -raw vm_ip)" >> $GITHUB_OUTPUT
 
-      - name: Use Output
-        run: echo "Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
+      - name: Show Output
+        run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
 
+      - name: Log Auto-Delete Plan
+        if: ${{ github.event.inputs.auto_delete_after_24h == 'true' }}
+        run: echo "⚠️ Auto-delete enabled — consider scheduling a destroy job in 24h."
