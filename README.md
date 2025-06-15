@@ -8,10 +8,8 @@ GitHub Actions workflows
 Separate deployment environments (workspaces) per cloud provider
 
 📁 Project Structure
-text
-Copy
-Edit
-.
+bash
+./
 ├── main.tf (legacy entry point - no longer used directly)
 ├── variables.tf
 ├── terraform.tfvars
@@ -37,6 +35,8 @@ Cloud Provider	Deployment Modes	Tech Stack
 AWS	sandbox, production	Django or WordPress
 GCP	sandbox, production	Django or WordPress
 Azure	sandbox, production	Django or WordPress
+
+...
 
 ✅ Requirements
 Terraform v1.3+
