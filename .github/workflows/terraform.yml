@@ -113,7 +113,7 @@ jobs:
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
-            - name: Terraform Plan
+      - name: Terraform Plan
         run: |
           terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan \
             -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
