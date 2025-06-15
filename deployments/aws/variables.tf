@@ -151,3 +151,12 @@ variable "clone_target_url" {
   description = "URL or repo for the demo website to clone"
   default     = ""
 }
+# modules/aws/variables.tf
+
+# ... existing variables ...
+
+variable "user_data" {
+  description = "Rendered user data script to bootstrap the VM"
+  type        = string
+  default     = ""
+}
