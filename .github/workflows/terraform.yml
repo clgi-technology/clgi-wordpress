@@ -113,41 +113,44 @@ jobs:
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
-      - name: Terraform Plan
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan \
-          -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
-          -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
-          -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
-          -var="setup_demo_clone=${{ github.event.inputs.setup_demo_clone }}" \
-          -var="clone_target_url=${{ github.event.inputs.clone_target_url }}" \
-          -var="vm_name=${{ github.event.inputs.vm_name }}" \
-          -var="vm_size=${{ github.event.inputs.vm_size }}" \
-          -var="region=${{ github.event.inputs.region }}" \
-          -var="ssh_allowed_ip=${{ github.event.inputs.ssh_allowed_cidr }}" \
-          -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
-          -var="ssh_private_key=${{ secrets.SSH_PRIVATE_KEY }}" \
-          -var="ssh_password=${{ secrets.SSH_PASSWORD }}" \
-          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -var="aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}"
+            - name: Terraform Plan
+        run: |
+          terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan \
+            -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
+            -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
+            -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
+            -var="setup_demo_clone=${{ github.event.inputs.setup_demo_clone }}" \
+            -var="clone_target_url=${{ github.event.inputs.clone_target_url }}" \
+            -var="vm_name=${{ github.event.inputs.vm_name }}" \
+            -var="vm_size=${{ github.event.inputs.vm_size }}" \
+            -var="region=${{ github.event.inputs.region }}" \
+            -var="ssh_allowed_ip=${{ github.event.inputs.ssh_allowed_cidr }}" \
+            -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
+            -var="ssh_private_key=${{ secrets.SSH_PRIVATE_KEY }}" \
+            -var="ssh_password=${{ secrets.SSH_PASSWORD }}" \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var="aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}"
 
       - name: Terraform Apply
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve \
-          -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
-          -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
-          -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
-          -var="setup_demo_clone=${{ github.event.inputs.setup_demo_clone }}" \
-          -var="clone_target_url=${{ github.event.inputs.clone_target_url }}" \
-          -var="vm_name=${{ github.event.inputs.vm_name }}" \
-          -var="vm_size=${{ github.event.inputs.vm_size }}" \
-          -var="region=${{ github.event.inputs.region }}" \
-          -var="ssh_allowed_ip=${{ github.event.inputs.ssh_allowed_cidr }}" \
-          -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
-          -var="ssh_private_key=${{ secrets.SSH_PRIVATE_KEY }}" \
-          -var="ssh_password=${{ secrets.SSH_PASSWORD }}" \
-          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -var="aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}"
+        run: |
+          terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve \
+            -var="cloud_provider=${{ github.event.inputs.cloud_provider }}" \
+            -var="deployment_mode=${{ github.event.inputs.deployment_mode }}" \
+            -var="auto_delete_after_24h=${{ github.event.inputs.auto_delete_after_24h }}" \
+            -var="setup_demo_clone=${{ github.event.inputs.setup_demo_clone }}" \
+            -var="clone_target_url=${{ github.event.inputs.clone_target_url }}" \
+            -var="vm_name=${{ github.event.inputs.vm_name }}" \
+            -var="vm_size=${{ github.event.inputs.vm_size }}" \
+            -var="region=${{ github.event.inputs.region }}" \
+            -var="ssh_allowed_ip=${{ github.event.inputs.ssh_allowed_cidr }}" \
+            -var="ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
+            -var="ssh_private_key=${{ secrets.SSH_PRIVATE_KEY }}" \
+            -var="ssh_password=${{ secrets.SSH_PASSWORD }}" \
+            -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var="aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}"
+
 
       - name: Export Terraform Output IP
         id: tf_output
