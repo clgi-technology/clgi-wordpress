@@ -109,7 +109,6 @@ resource "aws_instance" "vm" {
   instance_type               = var.vm_size
   subnet_id                   = aws_subnet.public[0].id
   key_name                    = aws_key_pair.deployer[0].key_name
-  vpc_security_group_ids      = [aws_security_group.ssh[0].id]
   associate_public_ip_address = true
   user_data                   = var.user_data
   vpc_security_group_ids      = var.security_group_id != "" ? [var.security_group_id] : [aws_security_group.ssh[0].id]
