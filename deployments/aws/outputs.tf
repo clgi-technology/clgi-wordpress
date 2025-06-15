@@ -16,3 +16,8 @@ output "private_key_pem" {
   value     = module.app.private_key_pem
   sensitive = true
 }
+
+output "security_group_id" {
+  description = "Security Group ID created by the security_group module"
+  value       = module.security_group.security_group_id
+}
