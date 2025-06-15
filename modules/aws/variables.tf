@@ -1,5 +1,3 @@
-# modules/aws/variables.tf
-
 variable "vm_name" {
   description = "Name of the VM"
   type        = string
@@ -34,7 +32,7 @@ variable "setup_demo_clone" {
 variable "clone_target_url" {
   description = "URL of the demo site to clone"
   type        = string
-  default     = null
+  default     = ""
 }
 
 variable "auto_delete_after_24h" {
@@ -42,17 +40,14 @@ variable "auto_delete_after_24h" {
   type        = bool
   default     = false
 }
+
 variable "ssh_password" {
   description = "Optional password for SSH access"
   type        = string
-  default     = null
+  default     = ""
 }
-variable "ssh_public_key_path" {
-  description = "Path to SSH public key for AWS EC2"
-  type        = string
-}
+
 variable "ssh_public_key" {
   description = "Public SSH key to inject into AWS EC2"
   type        = string
 }
-
