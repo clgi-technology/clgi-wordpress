@@ -1,21 +1,21 @@
 output "vm_ip" {
   description = "Public IP address of the AWS EC2 instance"
-  value       = aws_instance.vm.public_ip
+  value       = length(aws_instance.vm) > 0 ? aws_instance.vm[0].public_ip : null
 }
 
 output "instance_id" {
   description = "AWS EC2 instance ID"
-  value       = aws_instance.vm.id
+  value       = aws_instance.vm[0].id
 }
 
 output "tags" {
   description = "Tags assigned to the AWS instance"
-  value       = aws_instance.vm.tags
+  value       = aws_instance.vm[0].tags
 }
 
 output "destroy_after" {
   description = "Custom auto-delete or expiration tag, if set"
-  value       = try(aws_instance.vm.tags["destroy_after"], null)
+  value       = try(aws_instance.vm[0].tags["destroy_after"], null)
 }
 
 output "private_key_pem" {
