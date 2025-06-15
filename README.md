@@ -88,18 +88,17 @@ Set the following variables (via terraform.tfvars or GitHub inputs) to clone a s
 ```hcl
 setup_demo_clone   = true
 clone_target_url   = "https://github.com/example/my-demo-app.git"
-
 🧨 Destroying Infrastructure
-A separate workflow (terraform-destroy.yml) can be used to destroy VMs by:
+A separate workflow (terraform-destroy.yml) can be used to destroy deployed VMs. This workflow can:
 
-Cloud provider
+Target specific cloud providers
 
-Instance name or tag
+Select instances by name or tag
 
-Expired destroy_after timestamp (coming soon)
+Leverage an expiration mechanism with a destroy_after timestamp (feature coming soon)
 
 🧹 Legacy Files
 Files previously in the project root have been moved to /legacy and are no longer used. All deployment logic now runs under the deployments/<cloud>/ structure.
 
 📬 Feedback & Contributions
-Feel free to open issues, PRs, or suggest new cloud providers or frameworks you'd like integrated!
+Feel free to open issues, submit pull requests, or suggest new cloud providers, frameworks, or features you'd like integrated!
