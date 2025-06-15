@@ -28,8 +28,12 @@ data "template_file" "user_data" {
 
 module "security_group" {
   source         = "../../modules/security_group"
+  project_name   = var.vm_name
+  vpc_id         = module.app.vpc_id   # Make sure your app module outputs vpc_id
+  ssh_ip_address = var.ssh_allowed_ip
   cloud_provider = "aws"
-  ssh_cidr       = var.ssh_allowed_ip
+
+  # Pass any other required variables security_group module needs here
 }
 
 module "app" {
@@ -45,7 +49,6 @@ module "app" {
   clone_target_url     = var.clone_target_url
   user_data            = data.template_file.user_data.rendered
 
-  security_group_id    = module.security_groups.id
-  ssh_public_key       = ""  # Since Terraform creates the key, no public key input needed here
+  security_group_id    = module.security_group.security_group_id
+  ssh_public_key       = ""  # Terraform creates the key pair internally
 }
-
