@@ -14,8 +14,8 @@ variable "vm_size" {
   type        = string
 }
 
-variable "region" {
-  description = "Region for AWS resources"
+variable "aws_region" {
+  description = "AWS Region"
   type        = string
 }
 
