@@ -62,8 +62,28 @@ variable "user_data" {
   type        = string
   default     = ""
 }
+
 variable "security_group_id" {
   description = "ID of the security group to associate with the instance"
   type        = string
+  default     = ""
+}
+
+# AWS credentials (optional, usually best passed as environment variables)
+variable "aws_access_key" {
+  type        = string
+  description = "AWS Access Key"
+  default     = ""
+}
+
+variable "aws_secret_key" {
+  type        = string
+  description = "AWS Secret Key"
+  default     = ""
+}
+
+variable "aws_session_token" {
+  type        = string
+  description = "AWS Session Token (if using temporary credentials)"
   default     = ""
 }
