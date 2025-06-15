@@ -1,5 +1,5 @@
 resource "aws_security_group" "web_sg" {
-  name        = "${var.project_name}-sg"
+  name_prefix = "${var.project_name}-sg-"
   description = "Allow HTTP, HTTPS, and SSH access"
   vpc_id      = var.vpc_id
 
