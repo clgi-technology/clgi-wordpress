@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.4.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -17,10 +18,11 @@ provider "aws" {
 
 data "template_file" "user_data" {
   template = file("${path.module}/../../templates/user-data.sh.tmpl")
+
   vars = {
-    deployment_mode    = var.deployment_mode
-    setup_demo_clone   = var.setup_demo_clone ? "true" : "false"
-    clone_target_url   = var.clone_target_url
+    deployment_mode  = var.deployment_mode
+    setup_demo_clone = var.setup_demo_clone ? "true" : "false"
+    clone_target_url = var.clone_target_url
   }
 }
 
@@ -31,19 +33,19 @@ module "security_groups" {
 }
 
 module "app" {
-  source               = "../../modules/aws"
-  vm_name              = var.vm_name
-  vm_size              = var.vm_size
-  region               = var.region
-  deployment_mode      = var.deployment_mode
-  ssh_public_key       = var.ssh_public_key
-  ssh_password         = var.ssh_password
+  source                = "../../modules/aws"
+  vm_name               = var.vm_name
+  vm_size               = var.vm_size
+  region                = var.region
+  deployment_mode       = var.deployment_mode
+  ssh_public_key        = var.ssh_public_key
+  ssh_password          = var.ssh_password
   auto_delete_after_24h = var.auto_delete_after_24h
-  ssh_allowed_ip       = var.ssh_allowed_ip
-  setup_demo_clone     = var.setup_demo_clone
-  clone_target_url     = var.clone_target_url
-  ssh_public_key_path  = "" # Optional if unused in module
-  user_data            = data.template_file.user_data.rendered
+  ssh_allowed_ip        = var.ssh_allowed_ip
+  setup_demo_clone      = var.setup_demo_clone
+  clone_target_url      = var.clone_target_url
+  ssh_public_key_path   = "" # optional
+  user_data             = data.template_file.user_data.rendered
 
-  security_group_id    = module.security_groups.id
+  security_group_id     = module.security_groups.id
 }
