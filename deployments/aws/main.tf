@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  region     = var.region
+  region     = var.aws_region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
   token      = var.aws_session_token
@@ -29,26 +29,26 @@ data "template_file" "user_data" {
 module "security_group" {
   source         = "../../modules/security_group"
   project_name   = var.vm_name
-  vpc_id         = module.app.vpc_id   # Make sure your app module outputs vpc_id
+  vpc_id         = module.app.vpc_id    # Make sure module.app outputs vpc_id
   ssh_ip_address = var.ssh_allowed_ip
   cloud_provider = "aws"
 
-  # Pass any other required variables security_group module needs here
+  # Add any other variables your security_group module requires
 }
 
 module "app" {
-  source               = "../../modules/aws"
-  vm_name              = var.vm_name
-  vm_size              = var.vm_size
-  region               = var.region
-  deployment_mode      = var.deployment_mode
-  ssh_password         = var.ssh_password
+  source                = "../../modules/aws"
+  vm_name               = var.vm_name
+  vm_size               = var.vm_size
+  aws_region            = var.aws_region   # Pass aws_region, not region
+  deployment_mode       = var.deployment_mode
+  ssh_password          = var.ssh_password
   auto_delete_after_24h = var.auto_delete_after_24h
-  ssh_allowed_ip       = var.ssh_allowed_ip
-  setup_demo_clone     = var.setup_demo_clone
-  clone_target_url     = var.clone_target_url
-  user_data            = data.template_file.user_data.rendered
+  ssh_allowed_ip        = var.ssh_allowed_ip
+  setup_demo_clone      = var.setup_demo_clone
+  clone_target_url      = var.clone_target_url
+  user_data             = data.template_file.user_data.rendered
 
-  security_group_id    = module.security_group.security_group_id
-  ssh_public_key       = ""  # Terraform creates the key pair internally
+  security_group_id     = module.security_group.security_group_id
+  ssh_public_key        = ""  # key pair created inside module
 }
