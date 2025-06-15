@@ -26,8 +26,8 @@ data "template_file" "user_data" {
   }
 }
 
-module "security_groups" {
-  source         = "../../modules/security_groups"
+module "security_group" {
+  source         = "../../modules/security_group"
   cloud_provider = "aws"
   ssh_cidr       = var.ssh_allowed_ip
 }
