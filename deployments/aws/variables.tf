@@ -18,11 +18,6 @@ variable "auto_delete_after_24h" {
   default     = false
 }
 
-variable "region" {
-  type        = string
-  description = "Region to deploy the VM in"
-}
-
 variable "vm_name" {
   type        = string
   description = "Name of the VM to deploy"
