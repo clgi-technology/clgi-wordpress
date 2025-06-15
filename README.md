@@ -75,6 +75,29 @@ Provisions software via user_data.sh.tmpl
 
 Outputs deployed VM IP
 
+GitHub Secrets Configuration
+To securely manage credentials and SSH keys, please add the following secrets to your GitHub repository settings under Settings > Secrets and variables > Actions:
+
+Secret Name	Description
+SSH_PRIVATE_KEY	Private SSH key for accessing provisioned VMs (PEM format)
+SSH_PUBLIC_KEY	Corresponding public SSH key
+SSH_PASSWORD	SSH password for VM login (optional)
+AWS_ACCESS_KEY_ID	AWS access key ID for your AWS account
+AWS_SECRET_ACCESS_KEY	AWS secret access key
+AWS_SESSION_TOKEN	AWS session token (optional, if using temporary credentials)
+GCP_CREDENTIALS	JSON content of your GCP service account key
+AZURE_CLIENT_ID	Azure Client ID for service principal
+AZURE_CLIENT_SECRET	Azure Client Secret for service principal
+AZURE_SUBSCRIPTION_ID	Azure Subscription ID
+AZURE_TENANT_ID	Azure Tenant ID
+
+Notes:
+The workflow automatically injects these secrets as environment variables for Terraform.
+
+Make sure these secrets have the minimal required permissions for provisioning and managing resources.
+
+Do not commit any secrets or credentials directly into the repository.
+
 🔁 Optional: Demo Website Cloning
 Set the following variables (via terraform.tfvars or GitHub inputs) to clone a site to the VM:
 
