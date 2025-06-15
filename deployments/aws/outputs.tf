@@ -11,3 +11,8 @@ output "instance_id" {
 output "region" {
   value = var.region
 }
+
+output "private_key_pem" {
+  value     = module.app.private_key_pem
+  sensitive = true
+}
