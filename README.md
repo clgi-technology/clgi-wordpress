@@ -82,18 +82,18 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 └── README.md
 ...
 
-🚀 Deployment Options
+🚀 **Deployment Options**
 Cloud Provider	Modes	Tech Stack
 AWS	sandbox / production	Django or WordPress
 GCP	sandbox / production	Django or WordPress
 Azure	sandbox / production	Django or WordPress
 
-⚙️ GitHub Actions Workflow
+⚙️ **GitHub Actions Workflow**
 Trigger deployments via GitHub UI or CLI.
 
 Workflow file: .github/workflows/terraform.yml
 
-Deployment Steps:
+**Deployment Steps:**
 Obtain temporary AWS credentials (if deploying to AWS):
 
 AWS_ACCESS_KEY_ID
@@ -114,7 +114,7 @@ auto_delete_after_24h (true/false)
 
 vm_name, vm_size, region, ssh_allowed_cidr
 
-Workflow tasks:
+**Workflow tasks:**
 
 Initialize Terraform in the target deployment folder.
 
@@ -124,7 +124,7 @@ Provision software with user_data.sh.tmpl.
 
 Output VM IP address.
 
-🔐 GitHub Secrets Configuration
+🔐 **GitHub Secrets Configuration**
 Add the following secrets to your repository:
 
 Secret Name	Description
@@ -140,20 +140,20 @@ AZURE_CLIENT_SECRET	Azure Client Secret for service principal
 AZURE_SUBSCRIPTION_ID	Azure Subscription ID
 AZURE_TENANT_ID	Azure Tenant ID
 
-Important:
+**Important:**
 
 Secrets are injected as environment variables automatically.
 
 Grant least privilege access to these credentials.
 
-Do not commit secrets in code or repo.
+**Do not commit secrets in code or repo.**
 
-🧩 Optional: Demo Website Cloning
+🧩 **Optional: Demo Website Cloning**
 Set these Terraform variables to enable cloning a demo app into the VM:
 setup_demo_clone = true
 clone_target_url = "https://github.com/example/my-demo-app.git"
 
-🧨 Destroying Infrastructure
+🧨 **Destroying Infrastructure**
 Use terraform-destroy.yml workflow to tear down infrastructure. It supports:
 
 Targeting specific cloud providers
@@ -162,10 +162,10 @@ Selecting instances by name or tag
 
 Auto-destroy with expiration timestamps (coming soon)
 
-🧹 Legacy Files
+🧹 **Legacy Files**
 Deprecated files moved to /legacy folder. Active deployment logic is under deployments/<cloud>/.
 
-📬 Feedback & Contributions
+📬 **Feedback & Contributions**
 Contributions are welcome! Please open issues, submit pull requests, or suggest new features and cloud providers.
 
 
