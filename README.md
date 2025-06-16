@@ -29,7 +29,9 @@ This project provides a **modular, cloud-agnostic Terraform deployment system** 
 - ✅ Tech stack provisioning: Django or WordPress  
 - ✅ Auto-expiry logic (auto-delete infrastructure after 24h)  
 - ✅ GitHub Actions CI/CD integration  
-- ✅ Optional website cloning on VM for demo/testing  
+- ✅ Optional website cloning on VM for demo/testing
+
+  **NOTE:** All is done via Github action to easy allow for mobility but you may prefeer to use command line as well.
 
 ---
 
@@ -48,26 +50,46 @@ Here’s your updated **Requirements** section with clickable links to the offic
 
 ## 🚀 Quick Start
 
-1. **Clone this repo**:
+Certainly! Here are sample screenshots illustrating the steps in the **Quick Start** section of your README:
 
-      ```bash
+---
+
+### 1. Clone the Repository
+
+![oaicite:1](https://docs.github.com/assets/images/help/repository/clone-repo-clone-url.png)([docs.github.com][1])
+
+*Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository.*
+
+
+   ```bash
    git clone https://github.com/your-org/your-repo.git
    cd your-repo
 
-**2. Prepare your cloud credentials and add them as GitHub secrets (see GitHub Secrets Configuration).**
+---
 
-**3. Trigger deployment via GitHub Actions:**
+### 2. Prepare Cloud Credentials and Add Them as GitHub Secrets
 
-Go to your repo's Actions tab.
+![oaicite:9](https://docs.github.com/assets/images/help/repository/repository-secrets.png)
 
-Select the Terraform workflow.
+*Go to your repository's "Settings" tab, select "Secrets and variables" > "Actions", and click "New repository secret" to add your cloud credentials.*
 
-Click Run workflow.
+---
 
-Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
+### 3. Trigger Deployment via GitHub Actions
 
-**4. Wait for deployment to complete and retrieve your VM IP from workflow outputs.**
+![oaicite:17](https://docs.github.com/assets/images/help/repository/run-workflow-button.png)([reddit.com][2])
 
+*Navigate to the "Actions" tab of your repository, select the desired workflow, and click the "Run workflow" button.*
+
+---
+
+### 4. Wait for Deployment to Complete and Retrieve Your VM IP
+
+![oaicite:25](https://docs.github.com/assets/images/help/repository/workflow-run-logs.png)([docs.github.com][1])
+
+*Monitor the workflow's progress in the "Actions" tab. Once completed, retrieve the VM's IP address from the workflow's output.*
+
+---
 
 
 ## 📁 Project Structure
