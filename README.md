@@ -80,7 +80,7 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 │   ├── outputs.tf
 │   └── terraform.tfvars
 └── README.md
-
+...
 
 🚀 Deployment Options
 Cloud Provider	Modes	Tech Stack
