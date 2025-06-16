@@ -3,37 +3,61 @@ name: Terraform Multi-Cloud Deployment
 on:
   workflow_dispatch:
     inputs:
-      deployment_config:
-        description: |
-          JSON string for deployment config, e.g.
-          {
-            "cloud_provider": "aws",
-            "deployment_mode": "sandbox",
-            "auto_delete_after_24h": true,
-            "setup_demo_clone": false,
-            "clone_target_url": "",
-            "vm_name": "clgi-deploy",
-            "vm_size": "t3.medium",
-            "region": "us-west-2",
-            "ssh_allowed_cidr": "0.0.0.0/0"
-          }
+      cloud_provider:
+        description: "Target Cloud Provider"
         required: true
-        default: '{}'
+        default: "aws"
+      deployment_mode:
+        description: "Deployment Mode (sandbox/production)"
+        required: true
+        default: "sandbox"
+      auto_delete_after_24h:
+        description: "Auto-delete after 24h"
+        required: true
+        default: "true"
+      setup_demo_clone:
+        description: "Clone demo app (true/false)"
+        required: true
+        default: "false"
+      clone_target_url:
+        description: "Git repo URL to clone (if enabled)"
+        required: false
+        default: ""
+      vm_name:
+        description: "VM Name"
+        required: true
+        default: "clgi-deploy"
+      vm_size:
+        description: "VM Size"
+        required: true
+        default: "t3.medium"
+      region:
+        description: "Cloud Region"
+        required: true
+        default: "us-west-2"
+      ssh_allowed_cidr:
+        description: "CIDR for SSH Access"
+        required: true
+        default: "0.0.0.0/0"
+      ssh_public_key:
+        description: "Public SSH Key (or use secret)"
+        required: false
+        default: ""
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     env:
-      TF_VAR_cloud_provider: ${{ fromJson(inputs.deployment_config).cloud_provider }}
-      TF_VAR_deployment_mode: ${{ fromJson(inputs.deployment_config).deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ fromJson(inputs.deployment_config).auto_delete_after_24h }}
-      TF_VAR_setup_demo_clone: ${{ fromJson(inputs.deployment_config).setup_demo_clone }}
-      TF_VAR_clone_target_url: ${{ fromJson(inputs.deployment_config).clone_target_url }}
-      TF_VAR_vm_name: ${{ fromJson(inputs.deployment_config).vm_name }}
-      TF_VAR_vm_size: ${{ fromJson(inputs.deployment_config).vm_size }}
-      TF_VAR_aws_region: ${{ fromJson(inputs.deployment_config).region }}
-      TF_VAR_ssh_allowed_ip: ${{ fromJson(inputs.deployment_config).ssh_allowed_cidr }}
+      TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
+      TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
+      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
+      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
+      TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
+      TF_VAR_vm_name: ${{ inputs.vm_name }}
+      TF_VAR_vm_size: ${{ inputs.vm_size }}
+      TF_VAR_aws_region: ${{ inputs.region }}
+      TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_cidr }}
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -45,11 +69,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Check Required Secrets
+      - name: Validate Secrets
         run: |
           [[ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]] && { echo "❌ Missing SSH_PRIVATE_KEY"; exit 1; }
-          [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]] && { echo "❌ Missing AWS_ACCESS_KEY_ID"; exit 1; }
-          [[ -z "${{ secrets.TF_TOKEN_app_terraform_io }}" ]] && { echo "❌ Missing TF_TOKEN_app_terraform_io"; exit 1; }
 
       - name: Terraform Init
         run: terraform init
