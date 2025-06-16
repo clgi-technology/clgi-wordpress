@@ -87,6 +87,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Debug TF Vars
         run: env | grep TF_VAR_
@@ -100,12 +102,12 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: List repo structure for debug
+      - name: Debug repo structure from deployments/aws
         run: |
           pwd
-          ls -l
-          ls -l deployments/aws
-          ls -l modules
+          ls -l ../..
+          ls -l ../../modules
+        working-directory: deployments/aws
   
       - name: Terraform Init
         run: terraform init
