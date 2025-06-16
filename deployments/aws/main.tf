@@ -35,7 +35,7 @@ module "security_group" {
 }
 
 module "app" {
-  source                = "../../modules/aws"
+  source                = "./modules/aws"
   vm_name               = var.vm_name
   vm_size               = var.vm_size
   aws_region            = var.aws_region   # Pass aws_region, not region
