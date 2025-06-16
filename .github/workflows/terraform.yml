@@ -108,6 +108,12 @@ jobs:
       - name: Terraform Apply
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve tfplan
 
+      - name: Upload SSH Private Key Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ssh-private-key
+          path: ~/.ssh/id_rsa
+
       - name: Export Terraform Output IP
         id: tf_output
         run: |
