@@ -54,7 +54,6 @@ jobs:
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      
 
     steps:
       - name: Checkout Code
@@ -63,6 +62,14 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Validate Terraform Cloud Token
+        run: |
+          if [ -z "$TF_TOKEN_app_terraform_io" ]; then
+            echo "❌ Error: Terraform Cloud token is missing!"
+            exit 1
+          fi
+          echo "✅ Terraform Cloud authentication token found."
+
       - name: Copy Terraform Modules Before Init
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
@@ -70,7 +77,15 @@ jobs:
           cp -R templates deployments/${{ inputs.cloud_provider }}/
           cp -R scripts deployments/${{ inputs.cloud_provider }}/
 
-      - name: Terraform Init
+      - name: Verify Copied Terraform Files Before Init
+        run: |
+          if [ ! -d "deployments/${{ inputs.cloud_provider }}/modules" ] || [ ! -d "deployments/${{ inputs.cloud_provider }}/templates" ] || [ ! -d "deployments/${{ inputs.cloud_provider }}/scripts" ]; then
+            echo "❌ Error: Required files missing in deployments path!"
+            exit 1
+          fi
+          echo "✅ All required files are present in deployments/${{ inputs.cloud_provider }}."
+
+      - name: Terraform Init (Using Terraform Cloud)
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
       - name: Copy Terraform Modules Before Plan
