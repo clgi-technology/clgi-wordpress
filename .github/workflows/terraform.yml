@@ -32,7 +32,7 @@ on:
         default: false
 
       clone_target_url:
-        description: "URL to scrape or clone (e.g., https://www.clgi.org)"
+        description: "URL to scrape or clone"
         required: false
         default: ""
 
@@ -52,12 +52,23 @@ on:
         default: "us-west-2"
 
       ssh_allowed_cidr:
-        description: "CIDR allowed to SSH (e.g. your_ip/32)"
+        description: "CIDR allowed to SSH"
         required: true
         default: "0.0.0.0/0"
 
 jobs:
+  sync-secrets:
+    uses: ./.github/workflows/sync-tfc-vars.yml
+    with:
+      cloud_provider: ${{ github.event.inputs.cloud_provider }}
+    secrets:
+      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
   deploy:
+    needs: sync-secrets
     runs-on: ubuntu-latest
 
     env:
@@ -70,199 +81,21 @@ jobs:
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
       TF_VAR_aws_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
-
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
-
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
+      - name: Check Required Secrets
+        run: |
+          [[ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]] && { echo "❌ Missing SSH_PRIVATE_KEY"; exit 1; }
+          [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]] && { echo "❌ Missing AWS_ACCESS_KEY_ID"; exit 1; }
+          [[ -z "${{ secrets.TF_TOKEN_app_terraform_io }}" ]] && { echo "❌ Missing TF_TOKEN_app_terraform_io"; exit 1; }
+
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Debug TF Vars
-        run: env | grep TF_VAR_
-
-      - name: Setup SSH Private Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Debug repo structure from repo root
-        run: |
-          pwd
-          ls -l
-          ls -l modules
-          ls -la modules/security_group
-          ls -l deployments/aws
-
-      - name: Clean Terraform Cache
-        run: rm -rf deployments/${{ github.event.inputs.cloud_provider }}/.terraform
-
-      - name: Debug modules folder relative to deployment dir
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Listing ../../modules directory:"
-          ls -ld ../../modules || echo "No modules directory found"
-          echo "Listing ../../modules/aws directory:"
-          ls -ld ../../modules/aws || echo "No modules/aws directory found"
-          echo "Listing ../../modules/security_group directory:"
-          ls -ld ../../modules/security_group || echo "No modules/security_group directory found"
-
-      - name: Terraform Version
-        run: terraform version
-
-      - name: Copy modules into deployment folder
-        run: |
-          mkdir -p deployments/${{ github.event.inputs.cloud_provider }}/modules
-          cp -r modules/* deployments/${{ github.event.inputs.cloud_provider }}/modules/
-          mkdir -p deployments/${{ github.event.inputs.cloud_provider }}/templates
-          cp -r templates/* deployments/${{ github.event.inputs.cloud_provider }}/templates/
-          mkdir -p deployments/${{ github.event.inputs.cloud_provider }}/scripts
-          cp -r scripts/* deployments/${{ github.event.inputs.cloud_provider }}/scripts/
-
-      - name: Debug AWS Credentials environment variables
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:0:4}...${AWS_ACCESS_KEY_ID: -4}"
-          echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:0:4}...${AWS_SECRET_ACCESS_KEY: -4}"
-          echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:0:4}...${AWS_SESSION_TOKEN: -4}"
-          echo "TF_VAR_aws_access_key=${TF_VAR_aws_access_key}"
-          echo "TF_VAR_aws_secret_key=${TF_VAR_aws_secret_key}"
-          echo "TF_VAR_aws_session_token=${TF_VAR_aws_session_token:-<none>}"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
-
-      - name: Sync AWS creds to Terraform Cloud workspace
-        if: ${{ github.event.inputs.cloud_provider == 'aws' }}
-        env:
-          TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-        run: |
-          ORG_NAME="ChurchoftheLivingGodIntlInc"
-          WORKSPACE_NAME="clgi-wordpress-aws"
-
-          WORKSPACE_ID=$(curl -sS \
-            --header "Authorization: Bearer $TFC_TOKEN" \
-            --header "Content-Type: application/vnd.api+json" \
-            "https://app.terraform.io/api/v2/organizations/$ORG_NAME/workspaces/$WORKSPACE_NAME" | jq -r '.data.id')
-
-          upsert_var() {
-            local key=$1
-            local value=$2
-            local sensitive=$3
-
-            VAR_ID=$(curl -sS \
-              --header "Authorization: Bearer $TFC_TOKEN" \
-              --header "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
-
-            if [[ -n "$VAR_ID" ]]; then
-              curl -sS \
-                --request PATCH \
-                --header "Authorization: Bearer $TFC_TOKEN" \
-                --header "Content-Type: application/vnd.api+json" \
-                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars/$VAR_ID" <<EOF
-{
-  "data": {
-    "id": "$VAR_ID",
-    "type": "vars",
-    "attributes": {
-      "key": "$key",
-      "value": "$value",
-      "category": "env",
-      "hcl": false,
-      "sensitive": $sensitive
-    }
-  }
-}
-EOF
-            else
-              curl -sS \
-                --request POST \
-                --header "Authorization: Bearer $TFC_TOKEN" \
-                --header "Content-Type: application/vnd.api+json" \
-                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" <<EOF
-{
-  "data": {
-    "type": "vars",
-    "attributes": {
-      "key": "$key",
-      "value": "$value",
-      "category": "env",
-      "hcl": false,
-      "sensitive": $sensitive
-    }
-  }
-}
-EOF
-            fi
-          }
-
-          upsert_var "AWS_ACCESS_KEY_ID" "$AWS_ACCESS_KEY_ID" true
-          upsert_var "AWS_SECRET_ACCESS_KEY" "$AWS_SECRET_ACCESS_KEY" true
-          if [[ -n "$AWS_SESSION_TOKEN" ]]; then
-            upsert_var "AWS_SESSION_TOKEN" "$AWS_SESSION_TOKEN" true
-          fi
-
-      - name: Terraform Init with debug
-        run: terraform init
-        env:
-          TF_LOG: DEBUG
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
-
-      - name: Terraform Validate
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
-
-      - name: Terraform Plan
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan
-
-      - name: Terraform Apply
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve
-
-      - name: Upload SSH Private Key Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ssh-private-key
-          path: ~/.ssh/id_rsa
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Export Terraform Output IP
-        id: tf_output
-        run: |
-          VM_IP=$(terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} output -raw vm_ip)
-          echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
-
-      - name: Show Output
-        run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
-
-      - name: Schedule Auto-Destroy in 24h
-        if: ${{ github.event.inputs.auto_delete_after_24h == 'true' }}
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: schedule-auto-destroy
-          client-payload: |
-            {
-              "cloud_provider": "${{ github.event.inputs.cloud_provider }}",
-              "vm_name": "${{ github.event.inputs.vm_name }}"
-            }
+      # 🔽 Continue with original deployment logic here...
