@@ -78,10 +78,11 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ### 3. Trigger Deployment via GitHub Actions [Workflow](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow)
 
 
-*Navigate to the "Actions" tab of your repository, select the desired workflow, and click the "Run workflow" button.*
+*Navigate to the "Actions" tab of your repository*
 
 ![Alt Workflow1](https://docs.github.com/assets/cb-12958/mw-1440/images/help/repository/actions-tab-global-nav-update.webp)
 
+*Select the desired workflow, and click the "Run workflow" button.*
 ![Alt Workflow2](https://docs.github.com/assets/cb-60473/mw-1440/images/help/repository/actions-select-workflow-2022.webp)
 
 ---
