@@ -57,6 +57,10 @@ on:
         default: "0.0.0.0/0"
 
 jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✅ Terraform workflow is recognized"
   sync-secrets:
     uses: ./.github/workflows/sync-tfc-vars.yml
     with:
