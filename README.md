@@ -88,11 +88,14 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 
 
 
-🚀 **Deployment Options**
-Cloud Provider	Modes	Tech Stack
-AWS	sandbox / production	Django or WordPress
-GCP	sandbox / production	Django or WordPress
-Azure	sandbox / production	Django or WordPress
+## 🚀 Deployment Options
+
+| Cloud Provider | Modes               | Tech Stack          |
+|----------------|---------------------|----------------------|
+| AWS            | sandbox / production | Django or WordPress |
+| GCP            | sandbox / production | Django or WordPress |
+| Azure          | sandbox / production | Django or WordPress |
+
 
 ⚙️ **GitHub Actions Workflow**
 Trigger deployments via GitHub UI or CLI.
