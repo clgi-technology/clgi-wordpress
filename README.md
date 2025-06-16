@@ -69,14 +69,19 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 │   ├── aws/         # Reusable AWS module
 │   ├── gcp/         # Reusable GCP module
 │   ├── azure/       # Reusable Azure module
-│   └── security_groups/
+│   └── security_group/
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
 ├── templates/
 │   └── user_data.sh.tmpl  # Cloud-init bootstrap template
 ├── scripts/
+│   ├── clone_clgi.py
 │   ├── install-django.sh
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
+│   ├── terraform-destroy.yml
 │   └── terraform.yml      # GitHub Actions workflow for deployment
 ├── legacy/
 │   ├── main.tf            # 🛑 Deprecated root entry point
