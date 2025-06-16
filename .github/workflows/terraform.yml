@@ -149,6 +149,79 @@ jobs:
           TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
 
+      - name: Sync AWS creds to Terraform Cloud workspace
+        if: ${{ github.event.inputs.cloud_provider == 'aws' }}
+        env:
+          TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          ORG_NAME="ChurchoftheLivingGodIntlInc"
+          WORKSPACE_NAME="clgi-wordpress-aws"
+
+          WORKSPACE_ID=$(curl -sS \
+            --header "Authorization: Bearer $TFC_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/organizations/$ORG_NAME/workspaces/$WORKSPACE_NAME" | jq -r '.data.id')
+
+          upsert_var() {
+            local key=$1
+            local value=$2
+            local sensitive=$3
+
+            VAR_ID=$(curl -sS \
+              --header "Authorization: Bearer $TFC_TOKEN" \
+              --header "Content-Type: application/vnd.api+json" \
+              "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
+
+            if [[ -n "$VAR_ID" ]]; then
+              curl -sS \
+                --request PATCH \
+                --header "Authorization: Bearer $TFC_TOKEN" \
+                --header "Content-Type: application/vnd.api+json" \
+                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars/$VAR_ID" <<EOF
+{
+  "data": {
+    "id": "$VAR_ID",
+    "type": "vars",
+    "attributes": {
+      "key": "$key",
+      "value": "$value",
+      "category": "env",
+      "hcl": false,
+      "sensitive": $sensitive
+    }
+  }
+}
+EOF
+            else
+              curl -sS \
+                --request POST \
+                --header "Authorization: Bearer $TFC_TOKEN" \
+                --header "Content-Type: application/vnd.api+json" \
+                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" <<EOF
+{
+  "data": {
+    "type": "vars",
+    "attributes": {
+      "key": "$key",
+      "value": "$value",
+      "category": "env",
+      "hcl": false,
+      "sensitive": $sensitive
+    }
+  }
+}
+EOF
+            fi
+          }
+
+          upsert_var "AWS_ACCESS_KEY_ID" "$AWS_ACCESS_KEY_ID" true
+          upsert_var "AWS_SECRET_ACCESS_KEY" "$AWS_SECRET_ACCESS_KEY" true
+          if [[ -n "$AWS_SESSION_TOKEN" ]]; then
+            upsert_var "AWS_SESSION_TOKEN" "$AWS_SESSION_TOKEN" true
+          fi
 
       - name: Terraform Init with debug
         run: terraform init
