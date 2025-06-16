@@ -47,14 +47,12 @@ variable "ssh_private_key" {
   type        = string
   description = "Private SSH key used for provisioning"
   sensitive   = true
-  default     = ""
 }
 
 variable "ssh_password" {
   type        = string
   description = "Optional password for SSH login"
   sensitive   = true
-  default     = ""
 }
 
 #############################
@@ -65,27 +63,23 @@ variable "aws_access_key" {
   type        = string
   description = "AWS Access Key ID"
   sensitive   = true
-  default     = ""
 }
 
 variable "aws_secret_key" {
   type        = string
   description = "AWS Secret Access Key"
   sensitive   = true
-  default     = ""
 }
 
 variable "aws_session_token" {
   type        = string
   description = "AWS Session Token (for STS)"
   sensitive   = true
-  default     = ""
 }
 
 variable "aws_region" {
   description = "AWS Region"
   type        = string
-  default     = "us-west-2"  # or your preferred default
 }
 
 #############################
@@ -95,14 +89,12 @@ variable "aws_region" {
 variable "gcp_project_id" {
   type        = string
   description = "GCP Project ID"
-  default     = ""
 }
 
 variable "gcp_credentials" {
   type        = string
   description = "GCP Service Account JSON (optional, if not via env)"
   sensitive   = true
-  default     = ""
 }
 
 #############################
@@ -113,28 +105,24 @@ variable "azure_client_id" {
   type        = string
   description = "Azure Client ID"
   sensitive   = true
-  default     = ""
 }
 
 variable "azure_client_secret" {
   type        = string
   description = "Azure Client Secret"
   sensitive   = true
-  default     = ""
 }
 
 variable "azure_subscription_id" {
   type        = string
   description = "Azure Subscription ID"
   sensitive   = true
-  default     = ""
 }
 
 variable "azure_tenant_id" {
   type        = string
   description = "Azure Tenant ID"
   sensitive   = true
-  default     = ""
 }
 
 #############################
