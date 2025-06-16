@@ -26,7 +26,7 @@ module "security_groups" {
 }
 
 module "app" {
-  source               = "../../modules/azure"
+  source               = "./modules/azure"
   vm_name              = var.vm_name
   vm_size              = var.vm_size
   region               = var.region
