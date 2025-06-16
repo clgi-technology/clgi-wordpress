@@ -15,36 +15,10 @@ on:
         description: "Deployment mode (sandbox or production)"
         required: true
         default: "sandbox"
-      auto_delete_after_24h:
-        description: "Enable auto-delete after 24h (true/false)"
-        required: true
-        default: "true"
-      setup_demo_clone:
-        description: "Clone demo app (true/false)"
-        required: true
-        default: "false"
-      clone_target_url:
-        description: "Git URL to demo app (if cloning)"
-        required: false
-      ssh_allowed_cidr:
-        description: "CIDR IP range allowed to SSH"
-        required: false
-        default: "0.0.0.0/0"  
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    env:
-      # Pulling credentials directly from Terraform Cloud instead of GitHub Secrets
-      TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
-      TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
-      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
-      TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
-      TF_VAR_vm_name: "clgi-vm"
-      TF_VAR_vm_size: "t3.medium"
-      TF_VAR_ssh_allowed_ip: "0.0.0.0/0"
 
     steps:
       - name: Checkout code
@@ -63,15 +37,15 @@ jobs:
       - name: Terraform Apply
         run: terraform -chdir=${{ steps.set-dir.outputs.dir }} apply -auto-approve
 
-      - name: Trigger Auto-Destroy
-        if: ${{ inputs.auto_delete_after_24h == 'true' }}
-        uses: peter-evans/repository-dispatch@v3
+      - name: Capture SSH Key for User
+        run: |
+          echo "🔑 Generated SSH Key:"
+          terraform output ssh_private_key > private_key.pem
+          chmod 600 private_key.pem
+          cat private_key.pem
+
+      - name: Store SSH Key in Artifact
+        uses: actions/upload-artifact@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: trigger-auto-destroy
-          client-payload: |
-            {
-              "cloud_provider": "${{ inputs.cloud_provider }}",
-              "vm_name": "clgi-vm",
-              "region": "us-west-2"
-            }
+          name: ssh_private_key
+          path: private_key.pem
