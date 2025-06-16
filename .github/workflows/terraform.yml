@@ -81,7 +81,6 @@ jobs:
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
       # Terraform Account token
-      TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
 
