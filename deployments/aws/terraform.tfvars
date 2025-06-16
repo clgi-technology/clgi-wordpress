@@ -11,4 +11,4 @@ ssh_password          = "REPLACE_ME"
 deployment_mode       = "sandbox"
 setup_demo_clone      = false
 clone_target_url      = "https://www.clgi.org"
-auto_delete_after_24h = false
+auto_delete_after_24h = true
