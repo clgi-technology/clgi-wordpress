@@ -97,6 +97,12 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ---
 
 
+### 5. Retrieve SSH info
+Users Can Access the SSH Key 2 ways:
+From GitHub Actions Logs: They can view and copy the private key.
+
+From GitHub Artifacts: Users can download private_key.pem from the Actions run.
+
 ## 📁 Project Structure
 
 ```plaintext
