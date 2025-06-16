@@ -100,6 +100,13 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: List repo structure for debug
+        run: |
+          pwd
+          ls -l
+          ls -l deployments/aws
+          ls -l modules
+
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} init
 
