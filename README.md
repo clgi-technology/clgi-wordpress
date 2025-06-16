@@ -60,7 +60,7 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 ## 📁 Project Structure
 
 ```plaintext
-.
+clgi-wordpress/
 ├── deployments/
 │   ├── aws/         # Terraform root module for AWS
 │         ├── main.tf
