@@ -69,7 +69,7 @@ jobs:
             echo "❌ Terraform Cloud token is still missing!"
             exit 1
           else
-            echo "✅ Terraform Cloud token successfully detected."
+            echo "✅ Terraform Cloud token successfully detected: $TF_TOKEN_app_terraform_io"
           fi
   
 
