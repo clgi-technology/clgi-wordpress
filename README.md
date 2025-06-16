@@ -70,6 +70,7 @@ AWS_SECRET_ACCESS_KEY
 AWS_SESSION_TOKEN
 
 Trigger GitHub Actions workflow (e.g., File: `.github/workflows/terraform.yml` )
+Go to GitHub repository → Actions → Choose Workflow → Run Workflow (answer any prompts)
 
 Inputs:  
 - cloud_provider: aws, gcp, azure  
