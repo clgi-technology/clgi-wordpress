@@ -11,6 +11,10 @@ on:
           - aws
           - gcp
           - azure
+      workspace_name:
+        description: "Terraform Cloud Workspace Name (optional override)"
+        required: false
+        default: ""
 
 jobs:
   sync-vars:
@@ -21,16 +25,23 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
       CLOUD_PROVIDER: ${{ inputs.cloud_provider }}
+      WORKSPACE_NAME_INPUT: ${{ inputs.workspace_name }}
 
     steps:
-      - name: Install jq
+      - name: Install Tools
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Determine workspace name and org
+      - name: Determine Workspace and Org
         id: vars
         run: |
-          echo "ORG_NAME=ChurchoftheLivingGodIntlInc" >> $GITHUB_OUTPUT
-          echo "WORKSPACE_NAME=clgi-wordpress-${CLOUD_PROVIDER}" >> $GITHUB_OUTPUT
+          ORG_NAME="ChurchoftheLivingGodIntlInc"
+          if [[ -z "$WORKSPACE_NAME_INPUT" ]]; then
+            WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
+          else
+            WORKSPACE_NAME="$WORKSPACE_NAME_INPUT"
+          fi
+          echo "ORG_NAME=$ORG_NAME" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=$WORKSPACE_NAME" >> $GITHUB_OUTPUT
 
       - name: Get Workspace ID from Terraform Cloud
         id: workspace_id
@@ -48,7 +59,7 @@ jobs:
             exit 1
           fi
 
-          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_ID=$WORKSPACE_ID" >> $GITHUB_OUTPUT
 
       - name: Upsert Env Variables
         run: |
@@ -66,6 +77,7 @@ jobs:
               | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
 
             if [[ -n "$VAR_ID" && "$VAR_ID" != "null" ]]; then
+              echo "🔁 Updating existing variable: $key"
               curl -sS --request PATCH \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
@@ -85,6 +97,7 @@ jobs:
 }
 EOF
             else
+              echo "➕ Creating new variable: $key"
               curl -sS --request POST \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
@@ -105,13 +118,9 @@ EOF
             fi
           }
 
-          echo "Syncing AWS_ACCESS_KEY_ID"
           upsert_var "AWS_ACCESS_KEY_ID" "$AWS_ACCESS_KEY_ID" true
-
-          echo "Syncing AWS_SECRET_ACCESS_KEY"
           upsert_var "AWS_SECRET_ACCESS_KEY" "$AWS_SECRET_ACCESS_KEY" true
 
           if [[ -n "$AWS_SESSION_TOKEN" && "$AWS_SESSION_TOKEN" != "null" ]]; then
-            echo "Syncing AWS_SESSION_TOKEN"
             upsert_var "AWS_SESSION_TOKEN" "$AWS_SESSION_TOKEN" true
           fi
