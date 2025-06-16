@@ -3,88 +3,58 @@ name: Terraform Multi-Cloud Deployment
 on:
   workflow_dispatch:
     inputs:
-      cloud_provider:
-        description: "Choose Cloud Provider"
-        required: true
-        type: choice
-        options: [aws, gcp, azure]
-        default: aws
-
-      deployment_mode:
-        description: "sandbox = Django, production = WordPress"
-        required: true
-        type: choice
-        options: [sandbox, production]
-        default: sandbox
-
-      auto_delete_after_24h:
-        description: "Auto-delete after 24 hours?"
-        required: true
-        type: choice
-        options: [true, false]
-        default: false
-
-      setup_demo_clone:
-        description: "Setup demo clone by scraping a website?"
-        required: true
-        type: choice
-        options: [true, false]
-        default: false
-
-      clone_target_url:
-        description: "URL to scrape or clone"
-        required: false
-        default: ""
-
-      vm_config:
+      deployment_config:
         description: |
-          JSON string for VM config:
-          {"vm_name": "", "vm_size": "", "region": "", "ssh_allowed_cidr": ""}
+          JSON string for deployment config, e.g.
+          {
+            "cloud_provider": "aws",
+            "deployment_mode": "sandbox",
+            "auto_delete_after_24h": true,
+            "setup_demo_clone": false,
+            "clone_target_url": "",
+            "vm_name": "clgi-deploy",
+            "vm_size": "t3.medium",
+            "region": "us-west-2",
+            "ssh_allowed_cidr": "0.0.0.0/0"
+          }
         required: true
-        default: '{"vm_name":"clgi-deploy","vm_size":"t3.medium","region":"us-west-2","ssh_allowed_cidr":"0.0.0.0/0"}'
+        default: '{}'
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    env:
-      TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
-      TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ fromJson(github.event.inputs.auto_delete_after_24h) }}
-      TF_VAR_setup_demo_clone: ${{ fromJson(github.event.inputs.setup_demo_clone) }}
-      TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
-
-      # AWS credentials - assume synced in Terraform Cloud workspace vars already,
-      # but still exporting here in case needed by Terraform provider plugins
+  sync-secrets:
+    uses: ./.github/workflows/sync-tfc-vars.yml
+    with:
+      cloud_provider: ${{ fromJson(github.event.inputs.deployment_config).cloud_provider }}
+    secrets:
+      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
+  deploy:
+    needs: sync-secrets
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_cloud_provider: ${{ fromJson(github.event.inputs.deployment_config).cloud_provider }}
+      TF_VAR_deployment_mode: ${{ fromJson(github.event.inputs.deployment_config).deployment_mode }}
+      TF_VAR_auto_delete_after_24h: ${{ fromJson(github.event.inputs.deployment_config).auto_delete_after_24h }}
+      TF_VAR_setup_demo_clone: ${{ fromJson(github.event.inputs.deployment_config).setup_demo_clone }}
+      TF_VAR_clone_target_url: ${{ fromJson(github.event.inputs.deployment_config).clone_target_url }}
+      TF_VAR_vm_name: ${{ fromJson(github.event.inputs.deployment_config).vm_name }}
+      TF_VAR_vm_size: ${{ fromJson(github.event.inputs.deployment_config).vm_size }}
+      TF_VAR_aws_region: ${{ fromJson(github.event.inputs.deployment_config).region }}
+      TF_VAR_ssh_allowed_ip: ${{ fromJson(github.event.inputs.deployment_config).ssh_allowed_cidr }}
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Parse VM config JSON
-        id: parse_vm_config
-        run: |
-          echo "vm_name=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.vm_name')" >> $GITHUB_OUTPUT
-          echo "vm_size=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.vm_size')" >> $GITHUB_OUTPUT
-          echo "region=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.region')" >> $GITHUB_OUTPUT
-          echo "ssh_allowed_cidr=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.ssh_allowed_cidr')" >> $GITHUB_OUTPUT
-
-      - name: Set Terraform environment variables from VM config
-        run: |
-          echo "TF_VAR_vm_name=${{ steps.parse_vm_config.outputs.vm_name }}" >> $GITHUB_ENV
-          echo "TF_VAR_vm_size=${{ steps.parse_vm_config.outputs.vm_size }}" >> $GITHUB_ENV
-          echo "TF_VAR_aws_region=${{ steps.parse_vm_config.outputs.region }}" >> $GITHUB_ENV
-          echo "TF_VAR_ssh_allowed_ip=${{ steps.parse_vm_config.outputs.ssh_allowed_cidr }}" >> $GITHUB_ENV
 
       - name: Check Required Secrets
         run: |
@@ -96,7 +66,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve
