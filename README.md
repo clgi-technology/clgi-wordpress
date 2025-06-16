@@ -106,10 +106,10 @@ clgi-wordpress/
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
-│   ├── sync-tfc-vars.yml           # Syncs github secrets with terraform cloud 
+│   ├── sync-tfc-vars.yml           # Syncs github secrets with terraform cloud (run this first to sync credentials)
 │   ├── terraform-apply-only.yml    # GitHub Actions workflow for running terraform apply command only
 │   ├── terraform-auto-destroy.yml  # GitHub Actions workflow for destroying previous deployment
-│   └── terraform.yml               # GitHub Actions workflow for deployment (run this first to trigger all others)
+│   └── terraform.yml               # GitHub Actions workflow for deployment 
 ├── legacy/
 │   ├── main.tf            # 🛑 Deprecated root entry point
 │   ├── variables.tf
