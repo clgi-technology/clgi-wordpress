@@ -42,7 +42,7 @@ Here’s your updated **Requirements** section with clickable links to the offic
 ## 🌐 Requirements
 
 * [**GitHub**](https://github.com) Account with [**Personal Access Token (PAT)**](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) — Needed to store Terraform code and run code via GitHub Actions
-* [**Terraform**](https://www.terraform.io/) Account with [**API Token**](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) — Needed to store Terraform state so Terraform can remember what it has done previously as well as secrets like AWS, Google, Azure. Store all secrets here.
+* [**Terraform**](https://app.terraform.io/app/) Account with [**API Token**](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) — Needed to store Terraform state so Terraform can remember what it has done previously as well as secrets like AWS, Google, Azure. Store all secrets here.
 * [**AWS**](https://aws.amazon.com/), [**Google Cloud (GCP)**](https://cloud.google.com/), or [**Azure**](https://azure.microsoft.com/) Account with role credentials — Needed for Terraform to deploy a VM into your cloud provider
 
 ---
@@ -66,13 +66,13 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
   ```
 ---
 
-### 2. Prepare Cloud Credentials and Add Them as GitHub [**Secrets**](https://docs.github.com/en/codespaces/managing-codespaces-for-your-organization/managing-development-environment-secrets-for-your-repository-or-organization#adding-secrets-for-a-repository)
+### 2. Prepare Cloud Credentials and Add Them as Terraform [**Secrets**](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables)
 
 
 
-*Go to your repository's "Settings" tab, select "Secrets and variables" > "Actions", and click "New repository secret" to add your cloud credentials.*
+*In Terraform dashboard Go to your repository's "Workspace" tab, select "Variables" and click "New variable".*
 
-![Alt Secret](https://docs.github.com/assets/cb-28260/mw-1440/images/help/repository/repo-actions-settings.webp)
+![Alt Secret](https://i.sstatic.net/tuj70.png)
 ---
 
 ### 3. Trigger Deployment via GitHub Actions [Workflow](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow)
