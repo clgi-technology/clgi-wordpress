@@ -86,15 +86,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check modules/security_group directory exists
-        run: |
-          if [ ! -d "modules/security_group" ]; then
-            echo "ERROR: modules/security_group directory is missing!"
-            exit 1
-          else
-            echo "modules/security_group directory exists."
-          fi
-
       - name: Debug TF Vars
         run: env | grep TF_VAR_
 
@@ -107,16 +98,15 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Debug repo structure from deployments/aws
+      - name: Debug Working Directory and Modules Folder
         run: |
           pwd
-          ls -l ../..
+          ls -l
           ls -l ../../modules
-        working-directory: deployments/aws
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Terraform Init
-        run: terraform init
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} init
 
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
