@@ -106,6 +106,7 @@ clgi-wordpress/
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
+│   ├── sync-tfc-vars.yml           # Syncs github secrets with terraform cloud (run this first)
 │   ├── terraform-apply-only.yml    # GitHub Actions workflow for running terraform apply command only
 │   ├── terraform-auto-destroy.yml  # GitHub Actions workflow for destroying previous deployment
 │   └── terraform.yml               # GitHub Actions workflow for deployment
