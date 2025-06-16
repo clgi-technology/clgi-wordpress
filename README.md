@@ -48,6 +48,29 @@ Trigger deployment from GitHub UI or CLI:
 
 File: `.github/workflows/terraform.yml`  
 
+🔁 Every Time You Want to Deploy via GitHub Actions
+Go to: https://churchofthelivinggod.awsapps.com/start/#/?tab=accounts
+
+Login via browser and download/copy the temp AWS credentials (STS):
+
+AWS_ACCESS_KEY_ID
+
+AWS_SECRET_ACCESS_KEY
+
+AWS_SESSION_TOKEN
+
+Go to GitHub repository → Settings → Secrets and Variables → Actions
+
+Update GitHub Secrets:
+
+AWS_ACCESS_KEY_ID
+
+AWS_SECRET_ACCESS_KEY
+
+AWS_SESSION_TOKEN
+
+Trigger GitHub Actions workflow (e.g., deploy WordPress VM, infra, etc.)
+
 Inputs:  
 - cloud_provider: aws, gcp, azure  
 - deployment_mode: sandbox or production  
