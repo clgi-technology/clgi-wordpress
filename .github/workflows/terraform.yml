@@ -26,7 +26,6 @@ on:
       clone_target_url:
         description: "Git URL to demo app (if cloning)"
         required: false
-
       ssh_allowed_cidr:
         description: "CIDR IP range allowed to SSH"
         required: false
@@ -37,42 +36,19 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Pulling credentials directly from Terraform Cloud instead of GitHub Secrets
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
       TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
       TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
-      # Defaults hardcoded here
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      TF_VAR_aws_region: "us-west-2"
       TF_VAR_ssh_allowed_ip: "0.0.0.0/0"
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Validate required secrets
-        run: |
-          REQUIRED_SECRETS=("SSH_PRIVATE_KEY" "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" "TF_TOKEN_app_terraform_io")
-          for SECRET in "${REQUIRED_SECRETS[@]}"; do
-            if [[ -z "${{ secrets[$SECRET] }}" ]]; then
-              echo "❌ Missing required secret: $SECRET"
-              exit 1
-            fi
-          done
-
-      - name: Validate AWS credentials
-        run: |
-          aws sts get-caller-identity || {
-            echo "❌ Invalid AWS credentials"; exit 1;
-          }
 
       - name: Set Terraform working directory
         id: set-dir
