@@ -133,7 +133,7 @@ Output VM IP address.
 
 **After the workflow runs, the user can:**
 
-Go to Actions tab → [this workflow run] → Artifacts section
+Insert VM IP in browser and access scrapped static page for demo or configure VM: Go to Actions tab → [this workflow run] → Artifacts section
 
 Download the ssh-private-key artifact (a zip containing the private key file)
 
