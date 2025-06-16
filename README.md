@@ -87,12 +87,13 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ---
 
-### 4. Wait for Deployment to Complete and Retrieve Your VM IP
+### 4. Wait for Deployment to Complete and Retrieve Your VM IP from the [Workflow Run Log](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/monitoring-workflows/using-workflow-run-logs)
 
 
 
 *Monitor the workflow's progress in the "Actions" tab. Once completed, retrieve the VM's IP address from the workflow's output.*
 
+![Alt Workflow3](https://docs.github.com/assets/cb-33371/mw-1440/images/help/repository/copy-link-button-updated-2.webp)
 ---
 
 
