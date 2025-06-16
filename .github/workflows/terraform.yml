@@ -86,6 +86,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check modules/security_group directory exists
+        run: |
+          if [ ! -d "modules/security_group" ]; then
+            echo "ERROR: modules/security_group directory is missing!"
+            exit 1
+          else
+            echo "modules/security_group directory exists."
+          fi
+
       - name: Debug TF Vars
         run: env | grep TF_VAR_
 
