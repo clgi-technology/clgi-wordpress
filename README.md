@@ -33,6 +33,13 @@ This project provides a **modular, cloud-agnostic Terraform deployment system** 
 
 ---
 
+## 🌐 Requirements
+
+Github Account with PAT token - Needed to store Terraform code and run code via Github Actions
+Terraform Account with API Token - Neededd to store Terraform state for Terraform to remember what it has done previously
+AWS/Google/Azure Account with Role Tokens - Needed for Terraform to deploy a VM into
+
+---
 ## 🚀 Quick Start
 
 1. **Clone this repo**:
