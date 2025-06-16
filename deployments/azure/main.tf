@@ -19,6 +19,16 @@ provider "azurerm" {
   tenant_id       = var.azure_tenant_id
 }
 
+data "template_file" "user_data" {
+  template = file("${path.module}/templates/user_data.sh.tmpl")
+
+  vars = {
+    deployment_mode  = var.deployment_mode
+    setup_demo_clone = var.setup_demo_clone ? "true" : "false"
+    clone_target_url = var.clone_target_url
+  }
+}
+
 module "security_groups" {
   source         = "./modules/security_group"
   cloud_provider = "azure"
