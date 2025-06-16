@@ -1,0 +1,55 @@
+name: Terraform Auto Destroy Old Deployments
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  destroy_old:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_aws_region: "us-west-2"
+
+      # Terraform Cloud API token
+      TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+
+      # AWS credentials for Terraform provider
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init (with Cloud Backend)
+        run: terraform -chdir=deployments/aws init
+
+      - name: Retrieve Auto Delete Timestamp
+        id: get_auto_delete_at
+        run: |
+          AUTO_DELETE_AT=$(terraform -chdir=deployments/aws output -raw auto_delete_at || echo "")
+          echo "auto_delete_at=$AUTO_DELETE_AT" >> $GITHUB_OUTPUT
+
+      - name: Check and Destroy If Expired
+        if: steps.get_auto_delete_at.outputs.auto_delete_at != ''
+        run: |
+          echo "AutoDeleteAt: ${{ steps.get_auto_delete_at.outputs.auto_delete_at }}"
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "Current time: $NOW"
+
+          if [[ "$NOW" > "${{ steps.get_auto_delete_at.outputs.auto_delete_at }}" ]]; then
+            echo "💣 Expired! Destroying resources..."
+            terraform -chdir=deployments/aws destroy -auto-approve
+          else
+            echo "⏳ Not expired. Skipping destroy."
+          fi
+
+      - name: Skip Destroy - No AutoDeleteAt Output
+        if: steps.get_auto_delete_at.outputs.auto_delete_at == ''
+        run: echo "⚠️ No auto_delete_at output found; skipping destroy."
