@@ -21,30 +21,19 @@ on:
         default: '{}'
 
 jobs:
-  sync-secrets:
-    uses: ./.github/workflows/sync-tfc-vars.yml
-    with:
-      cloud_provider: ${{ fromJson(github.event.inputs.deployment_config).cloud_provider }}
-    secrets:
-      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-
   deploy:
-    needs: sync-secrets
     runs-on: ubuntu-latest
 
     env:
-      TF_VAR_cloud_provider: ${{ fromJson(github.event.inputs.deployment_config).cloud_provider }}
-      TF_VAR_deployment_mode: ${{ fromJson(github.event.inputs.deployment_config).deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ fromJson(github.event.inputs.deployment_config).auto_delete_after_24h }}
-      TF_VAR_setup_demo_clone: ${{ fromJson(github.event.inputs.deployment_config).setup_demo_clone }}
-      TF_VAR_clone_target_url: ${{ fromJson(github.event.inputs.deployment_config).clone_target_url }}
-      TF_VAR_vm_name: ${{ fromJson(github.event.inputs.deployment_config).vm_name }}
-      TF_VAR_vm_size: ${{ fromJson(github.event.inputs.deployment_config).vm_size }}
-      TF_VAR_aws_region: ${{ fromJson(github.event.inputs.deployment_config).region }}
-      TF_VAR_ssh_allowed_ip: ${{ fromJson(github.event.inputs.deployment_config).ssh_allowed_cidr }}
+      TF_VAR_cloud_provider: ${{ fromJson(inputs.deployment_config).cloud_provider }}
+      TF_VAR_deployment_mode: ${{ fromJson(inputs.deployment_config).deployment_mode }}
+      TF_VAR_auto_delete_after_24h: ${{ fromJson(inputs.deployment_config).auto_delete_after_24h }}
+      TF_VAR_setup_demo_clone: ${{ fromJson(inputs.deployment_config).setup_demo_clone }}
+      TF_VAR_clone_target_url: ${{ fromJson(inputs.deployment_config).clone_target_url }}
+      TF_VAR_vm_name: ${{ fromJson(inputs.deployment_config).vm_name }}
+      TF_VAR_vm_size: ${{ fromJson(inputs.deployment_config).vm_size }}
+      TF_VAR_aws_region: ${{ fromJson(inputs.deployment_config).region }}
+      TF_VAR_ssh_allowed_ip: ${{ fromJson(inputs.deployment_config).ssh_allowed_cidr }}
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
