@@ -64,6 +64,7 @@ clgi-wordpress/
 ├── deployments/
 │   ├── aws/         # Terraform root module for AWS
 │         ├── main.tf
+│         ├── provider.tf
 │         ├── variables.tf
 │         ├── outputs.tf
 │         ├── terraform.tfvars
