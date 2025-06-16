@@ -25,7 +25,7 @@ data "template_file" "user_data" {
 }
 
 module "security_group" {
-  source         = "../../modules/security_group"
+  source         = "./modules/security_group"
   project_name   = var.vm_name
   vpc_id         = module.app.vpc_id    # Make sure module.app outputs vpc_id
   ssh_ip_address = var.ssh_allowed_ip
