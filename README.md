@@ -31,7 +31,7 @@ This project provides a **modular, cloud-agnostic Terraform deployment system** 
 - ✅ GitHub Actions CI/CD integration  
 - ✅ Optional website cloning on VM for demo/testing
 
-  **NOTE:** All is done via Github action to easy allow for mobility but you may prefeer to use command line as well.
+  **NOTE:** All is done via Github action to easy allow for mobility but you may prefer to use command line as well.
 
 ---
 
