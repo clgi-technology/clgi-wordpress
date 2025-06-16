@@ -20,7 +20,7 @@ provider "azurerm" {
 }
 
 module "security_groups" {
-  source         = "../../modules/security_groups"
+  source         = "./modules/security_group"
   cloud_provider = "azure"
   ssh_cidr       = var.ssh_allowed_ip
 }
