@@ -1,4 +1,4 @@
-name: Sync GitHub Secrets with Terraform Cloud
+name: Sync Terraform Cloud Variables
 
 on:
   workflow_call:
@@ -6,7 +6,6 @@ on:
       cloud_provider:
         required: true
         type: string
-
     secrets:
       TFC_TOKEN:
         required: true
@@ -20,44 +19,61 @@ on:
 jobs:
   sync-vars:
     runs-on: ubuntu-latest
-    if: ${{ inputs.cloud_provider == 'aws' }}
+    env:
+      TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      CLOUD_PROVIDER: ${{ inputs.cloud_provider }}
 
     steps:
-      - name: Sync AWS credentials to Terraform Cloud workspace
-        env:
-          TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      - name: Determine workspace name and org
+        id: vars
         run: |
           ORG_NAME="ChurchoftheLivingGodIntlInc"
-          WORKSPACE_NAME="clgi-wordpress-aws"
+          # Workspace naming convention could be dynamic based on cloud_provider, adjust if needed:
+          WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
+          echo "ORG_NAME=$ORG_NAME" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=$WORKSPACE_NAME" >> $GITHUB_OUTPUT
 
-          echo "🔁 Fetching workspace ID"
-          WORKSPACE_ID=$(curl -sS \
+      - name: Get Workspace ID from Terraform Cloud
+        id: workspace_id
+        run: |
+          RESPONSE=$(curl -sS \
             --header "Authorization: Bearer $TFC_TOKEN" \
             --header "Content-Type: application/vnd.api+json" \
-            "https://app.terraform.io/api/v2/organizations/$ORG_NAME/workspaces/$WORKSPACE_NAME" | jq -r '.data.id')
+            "https://app.terraform.io/api/v2/organizations/${{ steps.vars.outputs.ORG_NAME }}/workspaces/${{ steps.vars.outputs.WORKSPACE_NAME }}")
 
-          echo "✅ Workspace ID: $WORKSPACE_ID"
+          WORKSPACE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
 
+          if [ "$WORKSPACE_ID" = "null" ] || [ -z "$WORKSPACE_ID" ]; then
+            echo "❌ Workspace not found or API error."
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "WORKSPACE_ID=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+
+      - name: Upsert Env Variable function and sync secrets
+        shell: bash
+        run: |
           upsert_var() {
-            local key=$1
-            local value=$2
-            local sensitive=$3
+            local key="$1"
+            local value="$2"
+            local sensitive="$3"
+            local workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
 
             VAR_ID=$(curl -sS \
               --header "Authorization: Bearer $TFC_TOKEN" \
               --header "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
+              "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
 
-            if [[ -n "$VAR_ID" ]]; then
-              echo "🔄 Updating $key in Terraform Cloud"
+            if [[ -n "$VAR_ID" && "$VAR_ID" != "null" ]]; then
               curl -sS \
                 --request PATCH \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
-                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars/$VAR_ID" <<EOF
+                --data @- "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars/$VAR_ID" <<EOF
 {
   "data": {
     "id": "$VAR_ID",
@@ -73,12 +89,11 @@ jobs:
 }
 EOF
             else
-              echo "➕ Creating $key in Terraform Cloud"
               curl -sS \
                 --request POST \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
-                --data @- "https://app.terraform.io/api/v2/workspaces/$WORKSPACE_ID/vars" <<EOF
+                --data @- "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" <<EOF
 {
   "data": {
     "type": "vars",
@@ -95,10 +110,13 @@ EOF
             fi
           }
 
+          echo "Syncing AWS_ACCESS_KEY_ID"
           upsert_var "AWS_ACCESS_KEY_ID" "$AWS_ACCESS_KEY_ID" true
+
+          echo "Syncing AWS_SECRET_ACCESS_KEY"
           upsert_var "AWS_SECRET_ACCESS_KEY" "$AWS_SECRET_ACCESS_KEY" true
-          if [[ -n "$AWS_SESSION_TOKEN" ]]; then
+
+          if [[ -n "$AWS_SESSION_TOKEN" && "$AWS_SESSION_TOKEN" != "null" ]]; then
+            echo "Syncing AWS_SESSION_TOKEN"
             upsert_var "AWS_SESSION_TOKEN" "$AWS_SESSION_TOKEN" true
           fi
-
-          echo "✅ Sync complete"
