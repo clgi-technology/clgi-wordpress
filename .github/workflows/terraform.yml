@@ -105,10 +105,21 @@ jobs:
           ls -l modules
           ls -la modules/security_group
           ls -l deployments/aws
-        # No working-directory, runs at repo root
 
       - name: Clean Terraform Cache
         run: rm -rf deployments/${{ github.event.inputs.cloud_provider }}/.terraform
+
+      - name: Debug modules folder relative to deployment dir
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Listing ../../modules directory:"
+          ls -ld ../../modules || echo "No modules directory found"
+          echo "Listing ../../modules/aws directory:"
+          ls -ld ../../modules/aws || echo "No modules/aws directory found"
+          echo "Listing ../../modules/security_group directory:"
+          ls -ld ../../modules/security_group || echo "No modules/security_group directory found"
 
       - name: Terraform Version
         run: terraform version
