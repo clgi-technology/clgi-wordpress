@@ -12,24 +12,34 @@ on:
           - gcp
           - azure
       deployment_mode:
-        description: "Deployment mode (sandbox or production)"
+        description: "Deployment mode"
         required: true
-        default: "sandbox"
+        type: choice
+        options:
+          - sandbox
+          - production
       auto_delete_after_24h:
-        description: "Enable auto-delete after 24h (true/false)"
+        description: "Enable auto-delete after 24h"
         required: true
-        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
       setup_demo_clone:
-        description: "Clone demo app (true/false)"
+        description: "Clone demo app?"
         required: true
-        default: "false"
+        type: choice
+        options:
+          - "none"
+          - "basic"
+          - "full"
       clone_target_url:
         description: "Git URL to demo app (if cloning)"
         required: false
       ssh_allowed_ip:
         description: "CIDR IP range allowed to SSH"
         required: true
-        default: "0.0.0.0/0"  
+        default: "0.0.0.0/0"
 
 jobs:
   deploy:
