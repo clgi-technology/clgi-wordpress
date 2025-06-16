@@ -136,18 +136,20 @@ Output VM IP address.
 🔐 **GitHub Secrets Configuration**
 Add the following secrets to your repository:
 
-Secret Name	Description
-SSH_PRIVATE_KEY	Private SSH key for accessing provisioned VMs (PEM)
-SSH_PUBLIC_KEY	Corresponding public SSH key
-SSH_PASSWORD	SSH password for VM login (optional)
-AWS_ACCESS_KEY_ID	AWS access key ID
-AWS_SECRET_ACCESS_KEY	AWS secret access key
-AWS_SESSION_TOKEN	AWS session token (optional)
-GCP_CREDENTIALS	JSON content of your GCP service account key
-AZURE_CLIENT_ID	Azure Client ID for service principal
-AZURE_CLIENT_SECRET	Azure Client Secret for service principal
-AZURE_SUBSCRIPTION_ID	Azure Subscription ID
-AZURE_TENANT_ID	Azure Tenant ID
+| Secret Name           | Description                                         |
+|------------------------|-----------------------------------------------------|
+| SSH_PRIVATE_KEY        | Private SSH key for accessing provisioned VMs (PEM) |
+| SSH_PUBLIC_KEY         | Corresponding public SSH key                        |
+| SSH_PASSWORD           | SSH password for VM login (optional)               |
+| AWS_ACCESS_KEY_ID      | AWS access key ID                                   |
+| AWS_SECRET_ACCESS_KEY  | AWS secret access key                               |
+| AWS_SESSION_TOKEN      | AWS session token (optional)                        |
+| GCP_CREDENTIALS        | JSON content of your GCP service account key        |
+| AZURE_CLIENT_ID        | Azure Client ID for service principal               |
+| AZURE_CLIENT_SECRET    | Azure Client Secret for service principal           |
+| AZURE_SUBSCRIPTION_ID  | Azure Subscription ID                               |
+| AZURE_TENANT_ID        | Azure Tenant ID                                     |
+
 
 **Important:**
 
