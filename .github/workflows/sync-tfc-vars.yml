@@ -23,7 +23,7 @@ jobs:
       CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider }}
 
     steps:
-      - name: Install jq
+      - name: Install jq and curl
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
       - name: Determine workspace name and org
@@ -31,8 +31,8 @@ jobs:
         run: |
           ORG_NAME="ChurchoftheLivingGodIntlInc"
           WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
-          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_OUTPUT
-          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_OUTPUT
+          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_ENV
+          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_ENV
 
       - name: Get Workspace ID from Terraform Cloud
         id: workspace_id
@@ -40,7 +40,7 @@ jobs:
           RESPONSE=$(curl -sS \
             --header "Authorization: Bearer $TFC_TOKEN" \
             --header "Content-Type: application/vnd.api+json" \
-            "https://app.terraform.io/api/v2/organizations/${{ steps.vars.outputs.ORG_NAME }}/workspaces/${{ steps.vars.outputs.WORKSPACE_NAME }}")
+            "https://app.terraform.io/api/v2/organizations/${ORG_NAME}/workspaces/${WORKSPACE_NAME}")
 
           WORKSPACE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
 
@@ -50,7 +50,7 @@ jobs:
             exit 1
           fi
 
-          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_ENV
 
       - name: Upsert Env Variables
         shell: bash
@@ -59,7 +59,7 @@ jobs:
             key="$1"
             value="$2"
             sensitive="$3"
-            workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
+            workspace_id="${WORKSPACE_ID}"
 
             VAR_ID=$(curl -sS \
               --header "Authorization: Bearer $TFC_TOKEN" \
