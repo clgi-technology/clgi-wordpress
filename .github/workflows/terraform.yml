@@ -4,15 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       cloud_provider:
-        description: "Target Cloud Provider"
+        description: "Cloud provider (aws, gcp, azure)"
         required: true
-        default: "aws"
+        type: choice
+        options:
+          - aws
+          - gcp
+          - azure
       deployment_mode:
-        description: "Deployment Mode (sandbox/production)"
+        description: "Deployment mode (sandbox or production)"
         required: true
         default: "sandbox"
       auto_delete_after_24h:
-        description: "Auto-delete after 24h"
+        description: "Enable auto-delete after 24h (true/false)"
         required: true
         default: "true"
       setup_demo_clone:
@@ -20,29 +24,8 @@ on:
         required: true
         default: "false"
       clone_target_url:
-        description: "Git repo URL to clone (if enabled)"
+        description: "Git URL to demo app (if cloning)"
         required: false
-        default: ""
-      vm_name:
-        description: "VM Name"
-        required: true
-        default: "clgi-deploy"
-      vm_size:
-        description: "VM Size"
-        required: true
-        default: "t3.medium"
-      region:
-        description: "Cloud Region"
-        required: true
-        default: "us-west-2"
-      ssh_allowed_cidr:
-        description: "CIDR for SSH Access"
-        required: true
-        default: "0.0.0.0/0"
-      ssh_public_key:
-        description: "Public SSH Key (or use secret)"
-        required: false
-        default: ""
 
 jobs:
   deploy:
@@ -54,10 +37,11 @@ jobs:
       TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
       TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
-      TF_VAR_vm_name: ${{ inputs.vm_name }}
-      TF_VAR_vm_size: ${{ inputs.vm_size }}
-      TF_VAR_aws_region: ${{ inputs.region }}
-      TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_cidr }}
+      # Defaults hardcoded here
+      TF_VAR_vm_name: "clgi-vm"
+      TF_VAR_vm_size: "t3.medium"
+      TF_VAR_aws_region: "us-west-2"
+      TF_VAR_ssh_allowed_ip: "0.0.0.0/0"
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -66,18 +50,47 @@ jobs:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Validate Secrets
+      - name: Validate required secrets
         run: |
-          [[ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]] && { echo "❌ Missing SSH_PRIVATE_KEY"; exit 1; }
+          REQUIRED_SECRETS=("SSH_PRIVATE_KEY" "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" "TF_TOKEN_app_terraform_io")
+          for SECRET in "${REQUIRED_SECRETS[@]}"; do
+            if [[ -z "${{ secrets[$SECRET] }}" ]]; then
+              echo "❌ Missing required secret: $SECRET"
+              exit 1
+            fi
+          done
+
+      - name: Validate AWS credentials
+        run: |
+          aws sts get-caller-identity || {
+            echo "❌ Invalid AWS credentials"; exit 1;
+          }
+
+      - name: Set Terraform working directory
+        id: set-dir
+        run: echo "dir=deployments/${{ inputs.cloud_provider }}" >> $GITHUB_OUTPUT
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=${{ steps.set-dir.outputs.dir }} init
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform -chdir=${{ steps.set-dir.outputs.dir }} plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform -chdir=${{ steps.set-dir.outputs.dir }} apply -auto-approve
+
+      - name: Trigger Auto-Destroy
+        if: ${{ inputs.auto_delete_after_24h == 'true' }}
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: trigger-auto-destroy
+          client-payload: |
+            {
+              "cloud_provider": "${{ inputs.cloud_provider }}",
+              "vm_name": "clgi-vm",
+              "region": "us-west-2"
+            }
