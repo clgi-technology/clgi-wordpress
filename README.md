@@ -131,6 +131,19 @@ Provision software with user_data.sh.tmpl.
 
 Output VM IP address.
 
+**After the workflow runs, the user can:**
+
+Go to Actions tab → [this workflow run] → Artifacts section
+
+Download the ssh-private-key artifact (a zip containing the private key file)
+
+Extract and use it for SSH:
+
+```bash
+chmod 600 id_rsa
+ssh -i id_rsa ubuntu@<VM_IP>
+```
+
 🔐 **GitHub Secrets Configuration**
 Add the following secrets to your repository:
 
