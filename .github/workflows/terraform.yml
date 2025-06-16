@@ -63,8 +63,8 @@ jobs:
     env:
       TF_VAR_cloud_provider: ${{ github.event.inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ github.event.inputs.deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ github.event.inputs.auto_delete_after_24h == 'true' }}
-      TF_VAR_setup_demo_clone: ${{ github.event.inputs.setup_demo_clone == 'true' }}
+      TF_VAR_auto_delete_after_24h: ${{ fromJson(github.event.inputs.auto_delete_after_24h) }}
+      TF_VAR_setup_demo_clone: ${{ fromJson(github.event.inputs.setup_demo_clone) }}
       TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
       TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
       TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
