@@ -56,7 +56,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 1. Clone the Repository
 
-![oaicite:1](https://docs.github.com/assets/images/help/repository/clone-repo-clone-url.png)([docs.github.com][1])
+![oaicite:1](https://docs.github.com/assets/images/help/repository/clone-repo-clone-url.png)([githubdocs.cn][1])
 
 *Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository.*
 
