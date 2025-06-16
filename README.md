@@ -228,6 +228,7 @@ ssh -i id_rsa ubuntu@<VM_IP>
 
 🔐 **Terraform Secrets Configuration**
 Add the following secrets to your repository for Terraform to use:
+Add to Github Secrets the TF_TOKEN_APP_TERRAFORM_IO for Github and Terraform to talk to each other.
 
 | Secret Name           | Description                                         |
 |------------------------|-----------------------------------------------------|
