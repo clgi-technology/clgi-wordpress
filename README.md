@@ -42,7 +42,7 @@ Here’s your updated **Requirements** section with clickable links to the offic
 ## 🌐 Requirements
 
 * [**GitHub**](https://github.com) Account with [**Personal Access Token (PAT)**](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) — Needed to store Terraform code and run code via GitHub Actions
-* [**Terraform**](https://www.terraform.io/) Account with [**API Token**](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) — Needed to store Terraform state so Terraform can remember what it has done previously
+* [**Terraform**](https://www.terraform.io/) Account with [**API Token**](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) — Needed to store Terraform state so Terraform can remember what it has done previously as well as secrets like AWS, Google, Azure. Store all secrets here.
 * [**AWS**](https://aws.amazon.com/), [**Google Cloud (GCP)**](https://cloud.google.com/), or [**Azure**](https://azure.microsoft.com/) Account with role credentials — Needed for Terraform to deploy a VM into your cloud provider
 
 ---
@@ -181,9 +181,13 @@ https://churchofthelivinggod.awsapps.com/start/#/?tab=accounts
 AWS_ACCESS_KEY_ID | AWS_SECRET_ACCESS_KEY | AWS_SESSION_TOKEN
 
 
-Add these credentials as GitHub secrets under Settings → Secrets and variables → Actions.
+Add these credentials as Terraform variables under Workspace → Settings → Variables.
 
-Trigger the workflow from GitHub Actions → Select the workflow → Run workflow → Provide necessary inputs:
+Option 1: Trigger the workflow from GitHub Actions → Select the workflow → Run workflow → Provide necessary inputs 
+
+Option 2: Trigger the workflow from Terraform Cloud → Terraform Cloud → Workspace Settings → Run Triggers | Click "Create a Run Trigger" and Select GitHub Actions as the destination
+
+**Workflow User Inputs**
 
 cloud_provider (aws, gcp, azure)
 
@@ -216,8 +220,8 @@ chmod 600 id_rsa
 ssh -i id_rsa ubuntu@<VM_IP>
 ```
 
-🔐 **GitHub Secrets Configuration**
-Add the following secrets to your repository:
+🔐 **Terraform Secrets Configuration**
+Add the following secrets to your repository for Terraform to use:
 
 | Secret Name           | Description                                         |
 |------------------------|-----------------------------------------------------|
@@ -242,7 +246,7 @@ Grant least privilege access to these credentials.
 
 **Do not commit secrets in code or repo.**
 
-🧩 **Optional: Demo Website Cloning**
+🧩 **Optional: Demo Website Scrapping (static homepage cloning only)**
 Set these Terraform variables to enable cloning a demo app into the VM:
 
 ```bash
