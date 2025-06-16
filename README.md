@@ -68,10 +68,10 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 2. Prepare Cloud Credentials and Add Them as GitHub [**Secrets**](https://docs.github.com/en/codespaces/managing-codespaces-for-your-organization/managing-development-environment-secrets-for-your-repository-or-organization#adding-secrets-for-a-repository)
 
-![Alt Secret] (https://docs.github.com/assets/cb-28260/mw-1440/images/help/repository/repo-actions-settings.webp)
+
 
 *Go to your repository's "Settings" tab, select "Secrets and variables" > "Actions", and click "New repository secret" to add your cloud credentials.*
-
+![Alt Secret](https://docs.github.com/assets/cb-28260/mw-1440/images/help/repository/repo-actions-settings.webp)
 ---
 
 ### 3. Trigger Deployment via GitHub Actions
