@@ -81,18 +81,14 @@ jobs:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
-      - name: Checkout Code (default path)
+      - name: Checkout Code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Debug repo root structure
-        run: |
-          pwd
-          ls -l
-          ls -l modules
-          ls -l deployments/aws
-          
+      - name: Debug TF Vars
+        run: env | grep TF_VAR_
+
       - name: Setup SSH Private Key
         run: |
           mkdir -p ~/.ssh
@@ -102,21 +98,35 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform Init
+      - name: Debug repo structure from repo root
+        run: |
+          pwd
+          ls -l
+          ls -l modules
+          ls -la modules/security_group
+          ls -l deployments/aws
+        # No working-directory, runs at repo root
+
+      - name: Clean Terraform Cache
+        run: rm -rf deployments/${{ github.event.inputs.cloud_provider }}/.terraform
+
+      - name: Terraform Version
+        run: terraform version
+
+      - name: Terraform Init with debug
         run: terraform init
+        env:
+          TF_LOG: DEBUG
         working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Terraform Validate
-        run: terraform validate
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
       - name: Terraform Plan
-        run: terraform plan
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve
 
       - name: Upload SSH Private Key Artifact
         uses: actions/upload-artifact@v4
@@ -129,9 +139,8 @@ jobs:
       - name: Export Terraform Output IP
         id: tf_output
         run: |
-          VM_IP=$(terraform output -raw vm_ip)
+          VM_IP=$(terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} output -raw vm_ip)
           echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
-        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Show Output
         run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
