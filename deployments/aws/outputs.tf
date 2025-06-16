@@ -21,3 +21,8 @@ output "security_group_id" {
   description = "Security Group ID created by the security_group module"
   value       = module.security_group.security_group_id
 }
+
+output "auto_delete_at" {
+  description = "Timestamp when deployment should auto-expire (UTC, ISO 8601)"
+  value       = var.auto_delete_after_24h ? timeadd(timestamp(), "24h") : null
+}
