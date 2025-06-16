@@ -81,14 +81,18 @@ jobs:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Code (default path)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Debug TF Vars
-        run: env | grep TF_VAR_
-
+      - name: Debug repo root structure
+        run: |
+          pwd
+          ls -l
+          ls -l modules
+          ls -l deployments/aws
+          
       - name: Setup SSH Private Key
         run: |
           mkdir -p ~/.ssh
@@ -98,24 +102,21 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Debug Working Directory and Modules Folder
-        run: |
-          pwd
-          ls -l
-          ls -l ../../modules
+      - name: Terraform Init
+        run: terraform init
         working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
-      - name: Terraform Init
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} init
-
       - name: Terraform Validate
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
+        run: terraform validate
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Terraform Plan
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} plan
+        run: terraform plan
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Terraform Apply
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} apply -auto-approve
+        run: terraform apply -auto-approve
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Upload SSH Private Key Artifact
         uses: actions/upload-artifact@v4
@@ -128,8 +129,9 @@ jobs:
       - name: Export Terraform Output IP
         id: tf_output
         run: |
-          VM_IP=$(terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} output -raw vm_ip)
+          VM_IP=$(terraform output -raw vm_ip)
           echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
 
       - name: Show Output
         run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
