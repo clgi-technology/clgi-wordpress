@@ -55,7 +55,10 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 
 **4. Wait for deployment to complete and retrieve your VM IP from workflow outputs.**
 
+
 <pre> ```plaintext . ├── deployments/ │ ├── aws/ # Terraform root module for AWS │ ├── gcp/ # Terraform root module for GCP │ └── azure/ # Terraform root module for Azure ├── modules/ │ ├── aws/ # Reusable AWS module │ ├── gcp/ # Reusable GCP module │ ├── azure/ # Reusable Azure module │ └── security_groups/ ├── templates/ │ └── user_data.sh.tmpl # Cloud-init bootstrap template ├── scripts/ │ ├── install-django.sh │ ├── install-wordpress.sh │ └── install-clgi.sh ├── .github/workflows/ │ └── terraform.yml # GitHub Actions workflow for deployment ├── legacy/ │ ├── main.tf # 🛑 Deprecated root entry point │ ├── variables.tf │ ├── provider.tf │ ├── outputs.tf │ └── terraform.tfvars └── README.md ``` </pre>
+
+
 
 🚀 **Deployment Options**
 Cloud Provider	Modes	Tech Stack
