@@ -71,6 +71,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 
 *Go to your repository's "Settings" tab, select "Secrets and variables" > "Actions", and click "New repository secret" to add your cloud credentials.*
+
 ![Alt Secret](https://docs.github.com/assets/cb-28260/mw-1440/images/help/repository/repo-actions-settings.webp)
 ---
 
