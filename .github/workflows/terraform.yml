@@ -124,6 +124,11 @@ jobs:
       - name: Terraform Version
         run: terraform version
 
+      - name: Copy modules into deployment folder
+        run: |
+          mkdir -p deployments/${{ github.event.inputs.cloud_provider }}/modules
+          cp -r modules/* deployments/${{ github.event.inputs.cloud_provider }}/modules/
+
       - name: Terraform Init with debug
         run: terraform init
         env:
