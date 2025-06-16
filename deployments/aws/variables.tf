@@ -152,3 +152,9 @@ variable "clone_target_url" {
   description = "URL or repo for the demo website to clone"
   default     = ""
 }
+
+variable "region" {
+  type        = string
+  description = "Generic region variable alias (optional fallback)"
+  default     = ""
+}
