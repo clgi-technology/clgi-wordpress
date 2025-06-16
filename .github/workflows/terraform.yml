@@ -62,11 +62,42 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Copy Terraform Modules Before Init
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
+
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
+      - name: Copy Terraform Modules Before Plan
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
+
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
+
+      - name: Copy Terraform Modules Before Validate
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
+
+      - name: Terraform Validate
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
+
+      - name: Copy Terraform Modules Before Apply
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
 
       - name: Terraform Apply
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
