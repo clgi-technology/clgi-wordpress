@@ -1,3 +1,57 @@
+name: Sync Terraform Cloud Variables
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud_provider:
+        description: "Cloud Provider (aws, gcp, azure)"
+        required: true
+        type: choice
+        options:
+          - aws
+          - gcp
+          - azure
+
+jobs:
+  sync-vars:
+    runs-on: ubuntu-latest
+    env:
+      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider }}
+
+    steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Determine workspace name and org
+        id: vars
+        run: |
+          ORG_NAME="ChurchoftheLivingGodIntlInc"
+          WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
+          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Get Workspace ID from Terraform Cloud
+        id: workspace_id
+        run: |
+          RESPONSE=$(curl -sS \
+            --header "Authorization: Bearer $TFC_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/organizations/${{ steps.vars.outputs.ORG_NAME }}/workspaces/${{ steps.vars.outputs.WORKSPACE_NAME }}")
+
+          WORKSPACE_ID=$(echo "$RESPONSE" | jq -r '.data.id')
+
+          if [ "$WORKSPACE_ID" = "null" ] || [ -z "$WORKSPACE_ID" ]; then
+            echo "❌ Workspace not found or API error."
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
+
       - name: Upsert Env Variables
         shell: bash
         run: |
