@@ -57,7 +57,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ### 1. [**Clone the Repository**](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 
 
-*Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository.*
+*Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository into your Github account.*
 
 ![Alt Clone](https://docs.github.com/assets/cb-60499/mw-1440/images/help/repository/https-url-clone-cli.webp)
    ```bash
