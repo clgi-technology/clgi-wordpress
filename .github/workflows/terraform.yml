@@ -71,18 +71,14 @@ jobs:
       TF_VAR_aws_region: ${{ github.event.inputs.region }}
       TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
 
-      # SSH Keys from GitHub Secrets
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
 
-      # AWS credentials for terraform provider (only if AWS selected)
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
-      # Terraform Account token
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
-
 
     steps:
       - name: Checkout Code
@@ -108,11 +104,11 @@ jobs:
           ls -l ../..
           ls -l ../../modules
         working-directory: deployments/aws
-  
+
       - name: Terraform Init
         run: terraform init
         working-directory: deployments/${{ github.event.inputs.cloud_provider }}
-        
+
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
@@ -139,6 +135,14 @@ jobs:
       - name: Show Output
         run: echo "✅ Deployed to ${{ steps.tf_output.outputs.vm_ip }}"
 
-      - name: Log Auto-Delete Plan
+      - name: Schedule Auto-Destroy in 24h
         if: ${{ github.event.inputs.auto_delete_after_24h == 'true' }}
-        run: echo "⚠️ Auto-delete enabled — consider scheduling a destroy job in 24h."
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: schedule-auto-destroy
+          client-payload: |
+            {
+              "cloud_provider": "${{ github.event.inputs.cloud_provider }}",
+              "vm_name": "${{ github.event.inputs.vm_name }}"
+            }
