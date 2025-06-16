@@ -75,7 +75,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ![Alt Secret](https://i.sstatic.net/tuj70.png)
 ---
 
-### 3. Trigger Deployment via GitHub Actions [Workflow](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow)
+### 3. Trigger Deployment via Terraform Run Triggers or via GitHub Actions [Workflow](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow)
 
 
 *Navigate to the "Actions" tab of your repository*
