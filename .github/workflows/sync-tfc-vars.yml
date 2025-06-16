@@ -31,10 +31,9 @@ jobs:
         id: vars
         run: |
           ORG_NAME="ChurchoftheLivingGodIntlInc"
-          # Workspace naming convention could be dynamic based on cloud_provider, adjust if needed:
           WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
-          echo "ORG_NAME=$ORG_NAME" >> $GITHUB_OUTPUT
-          echo "WORKSPACE_NAME=$WORKSPACE_NAME" >> $GITHUB_OUTPUT
+          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Get Workspace ID from Terraform Cloud
         id: workspace_id
@@ -52,9 +51,9 @@ jobs:
             exit 1
           fi
 
-          echo "WORKSPACE_ID=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
 
-      - name: Upsert Env Variable function and sync secrets
+      - name: Upsert Env Variables
         shell: bash
         run: |
           upsert_var() {
