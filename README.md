@@ -64,7 +64,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
    ```bash
    git clone https://github.com/your-org/your-repo.git
    cd your-repo
-
+  ```
 ---
 
 ### 2. Prepare Cloud Credentials and Add Them as GitHub Secrets
