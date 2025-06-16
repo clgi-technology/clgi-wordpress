@@ -11,10 +11,6 @@ on:
           - aws
           - gcp
           - azure
-      workspace_name:
-        description: "Terraform Cloud Workspace Name (optional override)"
-        required: false
-        default: ""
 
 jobs:
   sync-vars:
@@ -24,24 +20,22 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      CLOUD_PROVIDER: ${{ inputs.cloud_provider }}
-      WORKSPACE_NAME_INPUT: ${{ inputs.workspace_name }}
+      CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider }}
 
     steps:
-      - name: Install Tools
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Determine Workspace and Org
+      - name: Determine workspace name and org
         id: vars
         run: |
           ORG_NAME="ChurchoftheLivingGodIntlInc"
-          if [[ -z "$WORKSPACE_NAME_INPUT" ]]; then
-            WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
-          else
-            WORKSPACE_NAME="$WORKSPACE_NAME_INPUT"
-          fi
-          echo "ORG_NAME=$ORG_NAME" >> $GITHUB_OUTPUT
-          echo "WORKSPACE_NAME=$WORKSPACE_NAME" >> $GITHUB_OUTPUT
+          WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
+          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Get Workspace ID from Terraform Cloud
         id: workspace_id
@@ -59,25 +53,23 @@ jobs:
             exit 1
           fi
 
-          echo "WORKSPACE_ID=$WORKSPACE_ID" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
 
       - name: Upsert Env Variables
+        shell: bash
         run: |
-          workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
-
           upsert_var() {
             key="$1"
             value="$2"
             sensitive="$3"
+            workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
 
             VAR_ID=$(curl -sS \
               --header "Authorization: Bearer $TFC_TOKEN" \
               --header "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" \
-              | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
+              "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
 
             if [[ -n "$VAR_ID" && "$VAR_ID" != "null" ]]; then
-              echo "🔁 Updating existing variable: $key"
               curl -sS --request PATCH \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
@@ -97,7 +89,6 @@ jobs:
 }
 EOF
             else
-              echo "➕ Creating new variable: $key"
               curl -sS --request POST \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
@@ -118,9 +109,13 @@ EOF
             fi
           }
 
+          echo "Syncing AWS_ACCESS_KEY_ID"
           upsert_var "AWS_ACCESS_KEY_ID" "$AWS_ACCESS_KEY_ID" true
+
+          echo "Syncing AWS_SECRET_ACCESS_KEY"
           upsert_var "AWS_SECRET_ACCESS_KEY" "$AWS_SECRET_ACCESS_KEY" true
 
           if [[ -n "$AWS_SESSION_TOKEN" && "$AWS_SESSION_TOKEN" != "null" ]]; then
+            echo "Syncing AWS_SESSION_TOKEN"
             upsert_var "AWS_SESSION_TOKEN" "$AWS_SESSION_TOKEN" true
           fi
