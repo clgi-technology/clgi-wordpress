@@ -161,9 +161,11 @@ Grant least privilege access to these credentials.
 
 🧩 **Optional: Demo Website Cloning**
 Set these Terraform variables to enable cloning a demo app into the VM:
+
+```bash
 setup_demo_clone = true
 clone_target_url = "https://github.com/example/my-demo-app.git"
-
+```
 
 🧨 **Destroying Infrastructure**
 Use terraform-destroy.yml workflow to tear down infrastructure. It supports:
