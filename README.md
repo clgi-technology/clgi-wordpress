@@ -177,7 +177,11 @@ Selecting instances by name or tag
 Auto-destroy with expiration timestamps (coming soon)
 
 🧹 **Legacy Files**
-Deprecated files moved to /legacy folder. Active deployment logic is under deployments/<cloud>/.
+Deprecated files moved to /legacy folder. Active deployment logic is under 
+
+```bash
+deployments/<cloud>/.
+```
 
 📬 **Feedback & Contributions**
 Contributions are welcome! Please open issues, submit pull requests, or suggest new features and cloud providers.
