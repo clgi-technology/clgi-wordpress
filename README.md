@@ -180,7 +180,7 @@ Auto-destroy with expiration timestamps (coming soon)
 Deprecated files moved to /legacy folder. Active deployment logic is under 
 
 ```bash
-deployments/<cloud>/.
+deployments/<cloud-platform>/.
 ```
 
 📬 **Feedback & Contributions**
