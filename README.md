@@ -103,13 +103,10 @@ Trigger deployments via GitHub UI or CLI.
 Workflow file: .github/workflows/terraform.yml
 
 **Deployment Steps:**
-Obtain temporary AWS credentials (if deploying to AWS):
+Obtain temporary AWS credentials (if deploying to AWS): https://churchofthelivinggod.awsapps.com/start/#/?tab=accounts
 
-AWS_ACCESS_KEY_ID
+AWS_ACCESS_KEY_ID | AWS_SECRET_ACCESS_KEY | AWS_SESSION_TOKEN
 
-AWS_SECRET_ACCESS_KEY
-
-AWS_SESSION_TOKEN
 
 Add these credentials as GitHub secrets under Settings → Secrets and variables → Actions.
 
