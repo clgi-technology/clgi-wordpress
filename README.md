@@ -69,7 +69,7 @@ AWS_SECRET_ACCESS_KEY
 
 AWS_SESSION_TOKEN
 
-Trigger GitHub Actions workflow (e.g., deploy WordPress VM, infra, etc.)
+Trigger GitHub Actions workflow (e.g., File: `.github/workflows/terraform.yml` )
 
 Inputs:  
 - cloud_provider: aws, gcp, azure  
