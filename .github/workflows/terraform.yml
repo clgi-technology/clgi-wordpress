@@ -97,4 +97,12 @@ jobs:
           [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]] && { echo "❌ Missing AWS_ACCESS_KEY_ID"; exit 1; }
           [[ -z "${{ secrets.TF_TOKEN_app_terraform_io }}" ]] && { echo "❌ Missing TF_TOKEN_app_terraform_io"; exit 1; }
 
-      # Add your existing Terraform steps here, e.g., setup, init, plan, apply, etc.
+      # Your Terraform commands go here (init, plan, apply, etc.)
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
