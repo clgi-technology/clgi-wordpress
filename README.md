@@ -63,12 +63,36 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 .
 ├── deployments/
 │   ├── aws/         # Terraform root module for AWS
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
+│         ├── terraform.tfvars
+│         ├── backend.tf
 │   ├── gcp/         # Terraform root module for GCP
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
+│         ├── terraform.tfvars
+│         ├── backend.tf
 │   └── azure/       # Terraform root module for Azure
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
+│         ├── terraform.tfvars
+│         ├── backend.tf
 ├── modules/
 │   ├── aws/         # Reusable AWS module
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
 │   ├── gcp/         # Reusable GCP module
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
 │   ├── azure/       # Reusable Azure module
+│         ├── main.tf
+│         ├── variables.tf
+│         ├── outputs.tf
 │   └── security_group/
 │         ├── main.tf
 │         ├── variables.tf
@@ -81,8 +105,9 @@ Provide inputs (e.g., cloud_provider, deployment_mode, vm_name, etc.).
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
-│   ├── terraform-destroy.yml
-│   └── terraform.yml      # GitHub Actions workflow for deployment
+│   ├── terraform-apply-only.yml    # GitHub Actions workflow for running terraform apply command only
+│   ├── terraform-auto-destroy.yml  # GitHub Actions workflow for destroying previous deployment
+│   └── terraform.yml               # GitHub Actions workflow for deployment
 ├── legacy/
 │   ├── main.tf            # 🛑 Deprecated root entry point
 │   ├── variables.tf
