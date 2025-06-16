@@ -91,7 +91,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 
 
-*Monitor the workflow's progress in the "Actions" tab. Once completed, retrieve the VM's IP address from the workflow's output.*
+*Monitor the workflow's progress in the "Actions" tab. Once completed, retrieve the VM's IP address from the workflow's run log output.*
 
 ![Alt Workflow3](https://docs.github.com/assets/cb-33371/mw-1440/images/help/repository/copy-link-button-updated-2.webp)
 ---
