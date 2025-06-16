@@ -106,10 +106,11 @@ jobs:
           ls -l
           ls -l deployments/aws
           ls -l modules
-
+  
       - name: Terraform Init
-        run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} init
-
+        run: terraform init
+        working-directory: deployments/${{ github.event.inputs.cloud_provider }}
+        
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ github.event.inputs.cloud_provider }} validate
 
