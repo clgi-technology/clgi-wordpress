@@ -15,10 +15,35 @@ on:
         description: "Deployment mode (sandbox or production)"
         required: true
         default: "sandbox"
+      auto_delete_after_24h:
+        description: "Enable auto-delete after 24h (true/false)"
+        required: true
+        default: "true"
+      setup_demo_clone:
+        description: "Clone demo app (true/false)"
+        required: true
+        default: "false"
+      clone_target_url:
+        description: "Git URL to demo app (if cloning)"
+        required: false
+      ssh_allowed_ip:
+        description: "CIDR IP range allowed to SSH"
+        required: true
+        default: "0.0.0.0/0"  
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
+      TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
+      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
+      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
+      TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
+      TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
+      TF_VAR_vm_name: "clgi-vm"
+      TF_VAR_vm_size: "t3.medium"
 
     steps:
       - name: Checkout code
