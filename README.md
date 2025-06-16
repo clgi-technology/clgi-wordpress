@@ -33,12 +33,20 @@ This project provides a **modular, cloud-agnostic Terraform deployment system** 
 
 ---
 
-🌐 Requirements
-GitHub Account with Personal Access Token (PAT) — Needed to store Terraform code and run code via GitHub Actions
+Here’s your updated **Requirements** section with clickable links to the official websites for GitHub, Terraform, AWS, Google Cloud, and Microsoft Azure:
 
-Terraform Account with API Token — Needed to store Terraform state so Terraform can remember what it has done previously
+---
 
-AWS, Google Cloud (GCP), or Azure Account with role credentials — Needed for Terraform to deploy a VM into your cloud provider
+## 🌐 Requirements
+
+* [**GitHub**](https://github.com) Account with [**Personal Access Token (PAT)**](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) — Needed to store Terraform code and run code via GitHub Actions
+* [**Terraform**](https://www.terraform.io/) Account with [**API Token**](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) — Needed to store Terraform state so Terraform can remember what it has done previously
+* [**AWS**](https://aws.amazon.com/), [**Google Cloud (GCP)**](https://cloud.google.com/), or [**Azure**](https://azure.microsoft.com/) Account with role credentials — Needed for Terraform to deploy a VM into your cloud provider
+
+---
+
+
+
 
 
 
