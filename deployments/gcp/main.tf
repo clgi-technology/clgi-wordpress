@@ -24,7 +24,7 @@ module "security_groups" {
 }
 
 module "app" {
-  source               = "../../modules/gcp"
+  source               = "./modules/gcp"
   vm_name              = var.vm_name
   vm_size              = var.vm_size
   region               = var.region
