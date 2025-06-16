@@ -80,7 +80,7 @@ jobs:
           cat private_key.pem
 
       - name: Store SSH Key in Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ssh_private_key
           path: private_key.pem
