@@ -56,7 +56,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 1. Clone the Repository
 
-![oaicite:1](https://docs.github.com/assets/images/help/repository/clone-repo-clone-url.png)([githubdocs.cn][1])
+
 
 *Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository.*
 
@@ -69,7 +69,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 2. Prepare Cloud Credentials and Add Them as GitHub Secrets
 
-![oaicite:9](https://docs.github.com/assets/images/help/repository/repository-secrets.png)
+
 
 *Go to your repository's "Settings" tab, select "Secrets and variables" > "Actions", and click "New repository secret" to add your cloud credentials.*
 
@@ -77,7 +77,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 3. Trigger Deployment via GitHub Actions
 
-![oaicite:17](https://docs.github.com/assets/images/help/repository/run-workflow-button.png)([reddit.com][2])
+
 
 *Navigate to the "Actions" tab of your repository, select the desired workflow, and click the "Run workflow" button.*
 
@@ -85,7 +85,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ### 4. Wait for Deployment to Complete and Retrieve Your VM IP
 
-![oaicite:25](https://docs.github.com/assets/images/help/repository/workflow-run-logs.png)([docs.github.com][1])
+
 
 *Monitor the workflow's progress in the "Actions" tab. Once completed, retrieve the VM's IP address from the workflow's output.*
 
