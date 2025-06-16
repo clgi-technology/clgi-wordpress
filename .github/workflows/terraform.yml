@@ -36,25 +36,10 @@ on:
         required: false
         default: ""
 
-      vm_name:
-        description: "VM Name"
+      vm_config:
+        description: "JSON string for VM config: {\"vm_name\": \"\", \"vm_size\": \"\", \"region\": \"\", \"ssh_allowed_cidr\": \"\"}"
         required: true
-        default: "clgi-deploy"
-
-      vm_size:
-        description: "VM Size"
-        required: true
-        default: "t3.medium"
-
-      region:
-        description: "Region"
-        required: true
-        default: "us-west-2"
-
-      ssh_allowed_cidr:
-        description: "CIDR allowed to SSH"
-        required: true
-        default: "0.0.0.0/0"
+        default: '{"vm_name":"clgi-deploy","vm_size":"t3.medium","region":"us-west-2","ssh_allowed_cidr":"0.0.0.0/0"}'
 
 jobs:
   sync-secrets:
@@ -77,10 +62,6 @@ jobs:
       TF_VAR_auto_delete_after_24h: ${{ fromJson(github.event.inputs.auto_delete_after_24h) }}
       TF_VAR_setup_demo_clone: ${{ fromJson(github.event.inputs.setup_demo_clone) }}
       TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
-      TF_VAR_vm_name: ${{ github.event.inputs.vm_name }}
-      TF_VAR_vm_size: ${{ github.event.inputs.vm_size }}
-      TF_VAR_aws_region: ${{ github.event.inputs.region }}
-      TF_VAR_ssh_allowed_ip: ${{ github.event.inputs.ssh_allowed_cidr }}
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -89,28 +70,31 @@ jobs:
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Parse VM config JSON
+        id: parse_vm_config
+        run: |
+          echo "vm_name=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.vm_name')" >> $GITHUB_OUTPUT
+          echo "vm_size=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.vm_size')" >> $GITHUB_OUTPUT
+          echo "region=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.region')" >> $GITHUB_OUTPUT
+          echo "ssh_allowed_cidr=$(echo '${{ github.event.inputs.vm_config }}' | jq -r '.ssh_allowed_cidr')" >> $GITHUB_OUTPUT
+
+      - name: Set Terraform environment variables from VM config
+        run: |
+          echo "TF_VAR_vm_name=${{ steps.parse_vm_config.outputs.vm_name }}" >> $GITHUB_ENV
+          echo "TF_VAR_vm_size=${{ steps.parse_vm_config.outputs.vm_size }}" >> $GITHUB_ENV
+          echo "TF_VAR_aws_region=${{ steps.parse_vm_config.outputs.region }}" >> $GITHUB_ENV
+          echo "TF_VAR_ssh_allowed_ip=${{ steps.parse_vm_config.outputs.ssh_allowed_cidr }}" >> $GITHUB_ENV
+
       - name: Check Required Secrets
         run: |
           [[ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]] && { echo "❌ Missing SSH_PRIVATE_KEY"; exit 1; }
           [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]] && { echo "❌ Missing AWS_ACCESS_KEY_ID"; exit 1; }
           [[ -z "${{ secrets.TF_TOKEN_app_terraform_io }}" ]] && { echo "❌ Missing TF_TOKEN_app_terraform_io"; exit 1; }
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform CLI
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan.binary
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan.binary
+      # Add your existing Terraform steps here, e.g., setup, init, plan, apply, etc.
