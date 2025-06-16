@@ -1,39 +1,31 @@
 name: Sync Terraform Cloud Variables
 
 on:
-  workflow_dispatch:          # Allows manual runs from Actions UI
+  workflow_dispatch:   # allows manual trigger from Actions UI
     inputs:
       cloud_provider:
-        description: 'Cloud provider to sync variables for'
+        description: "Cloud Provider (aws, gcp, azure)"
         required: true
-        default: 'aws'
-
-  workflow_call:              # Allows being called by other workflows
-    inputs:
-      cloud_provider:
-        required: true
-        type: string
-    secrets:
-      TFC_TOKEN:
-        required: true
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
-      AWS_SESSION_TOKEN:
-        required: false
+        type: choice
+        options:
+          - aws
+          - gcp
+          - azure
 
 jobs:
   sync-vars:
     runs-on: ubuntu-latest
     env:
-      TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider || inputs.cloud_provider }}
+      CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider }}
 
     steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
       - name: Determine workspace name and org
         id: vars
         run: |
@@ -64,10 +56,10 @@ jobs:
         shell: bash
         run: |
           upsert_var() {
-            local key="$1"
-            local value="$2"
-            local sensitive="$3"
-            local workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
+            key="$1"
+            value="$2"
+            sensitive="$3"
+            workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
 
             VAR_ID=$(curl -sS \
               --header "Authorization: Bearer $TFC_TOKEN" \
@@ -75,8 +67,7 @@ jobs:
               "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
 
             if [[ -n "$VAR_ID" && "$VAR_ID" != "null" ]]; then
-              curl -sS \
-                --request PATCH \
+              curl -sS --request PATCH \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
                 --data @- "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars/$VAR_ID" <<EOF
@@ -95,8 +86,7 @@ jobs:
 }
 EOF
             else
-              curl -sS \
-                --request POST \
+              curl -sS --request POST \
                 --header "Authorization: Bearer $TFC_TOKEN" \
                 --header "Content-Type: application/vnd.api+json" \
                 --data @- "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" <<EOF
