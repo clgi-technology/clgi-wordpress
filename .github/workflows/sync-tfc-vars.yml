@@ -1,7 +1,7 @@
 name: Sync Terraform Cloud Variables
 
 on:
-  workflow_dispatch:   # allows manual trigger from Actions UI
+  workflow_dispatch:
     inputs:
       cloud_provider:
         description: "Cloud Provider (aws, gcp, azure)"
@@ -20,7 +20,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      CLOUD_PROVIDER: ${{ github.event.inputs.cloud_provider }}
+      CLOUD_PROVIDER: ${{ inputs.cloud_provider }}
 
     steps:
       - name: Install jq
@@ -29,10 +29,8 @@ jobs:
       - name: Determine workspace name and org
         id: vars
         run: |
-          ORG_NAME="ChurchoftheLivingGodIntlInc"
-          WORKSPACE_NAME="clgi-wordpress-${CLOUD_PROVIDER}"
-          echo "ORG_NAME=${ORG_NAME}" >> $GITHUB_OUTPUT
-          echo "WORKSPACE_NAME=${WORKSPACE_NAME}" >> $GITHUB_OUTPUT
+          echo "ORG_NAME=ChurchoftheLivingGodIntlInc" >> $GITHUB_OUTPUT
+          echo "WORKSPACE_NAME=clgi-wordpress-${CLOUD_PROVIDER}" >> $GITHUB_OUTPUT
 
       - name: Get Workspace ID from Terraform Cloud
         id: workspace_id
@@ -53,18 +51,19 @@ jobs:
           echo "WORKSPACE_ID=${WORKSPACE_ID}" >> $GITHUB_OUTPUT
 
       - name: Upsert Env Variables
-        shell: bash
         run: |
+          workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
+
           upsert_var() {
             key="$1"
             value="$2"
             sensitive="$3"
-            workspace_id="${{ steps.workspace_id.outputs.WORKSPACE_ID }}"
 
             VAR_ID=$(curl -sS \
               --header "Authorization: Bearer $TFC_TOKEN" \
               --header "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
+              "https://app.terraform.io/api/v2/workspaces/$workspace_id/vars" \
+              | jq -r --arg key "$key" '.data[] | select(.attributes.key == $key and .attributes.category == "env") | .id')
 
             if [[ -n "$VAR_ID" && "$VAR_ID" != "null" ]]; then
               curl -sS --request PATCH \
