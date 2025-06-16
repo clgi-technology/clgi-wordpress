@@ -18,7 +18,7 @@ provider "google" {
 }
 
 module "security_groups" {
-  source         = "../../modules/security_groups"
+  source         = "./modules/security_group"
   cloud_provider = "gcp"
   ssh_cidr       = var.ssh_allowed_ip
 }
