@@ -54,7 +54,7 @@ jobs:
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      TF_TOKEN_app_terraform_io: ${{ secrets.TFE_TOKEN }}
+      
 
     steps:
       - name: Checkout Code
