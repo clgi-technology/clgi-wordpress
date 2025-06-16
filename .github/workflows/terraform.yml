@@ -37,23 +37,14 @@ on:
         default: ""
 
       vm_config:
-        description: "JSON string for VM config: {\"vm_name\": \"\", \"vm_size\": \"\", \"region\": \"\", \"ssh_allowed_cidr\": \"\"}"
+        description: |
+          JSON string for VM config:
+          {"vm_name": "", "vm_size": "", "region": "", "ssh_allowed_cidr": ""}
         required: true
         default: '{"vm_name":"clgi-deploy","vm_size":"t3.medium","region":"us-west-2","ssh_allowed_cidr":"0.0.0.0/0"}'
 
 jobs:
-  sync-secrets:
-    uses: ./.github/workflows/sync-tfc-vars.yml
-    with:
-      cloud_provider: ${{ github.event.inputs.cloud_provider }}
-    secrets:
-      TFC_TOKEN: ${{ secrets.TF_TOKEN_app_terraform_io }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-
   deploy:
-    needs: sync-secrets
     runs-on: ubuntu-latest
 
     env:
@@ -64,9 +55,13 @@ jobs:
       TF_VAR_clone_target_url: ${{ github.event.inputs.clone_target_url }}
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+
+      # AWS credentials - assume synced in Terraform Cloud workspace vars already,
+      # but still exporting here in case needed by Terraform provider plugins
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_app_terraform_io }}
 
     steps:
@@ -97,12 +92,11 @@ jobs:
           [[ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]] && { echo "❌ Missing AWS_ACCESS_KEY_ID"; exit 1; }
           [[ -z "${{ secrets.TF_TOKEN_app_terraform_io }}" ]] && { echo "❌ Missing TF_TOKEN_app_terraform_io"; exit 1; }
 
-      # Your Terraform commands go here (init, plan, apply, etc.)
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
