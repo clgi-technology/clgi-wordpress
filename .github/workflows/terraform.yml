@@ -63,31 +63,41 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install Terraform manually
+        run: |
+          TERRAFORM_VERSION="1.12.2"
+          wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+          unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform version
+
       - name: Generate terraform.auto.tfvars.json for Terraform Cloud
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
-          echo "{
-            \"cloud_provider\": \"${TF_VAR_cloud_provider}\",
-            \"deployment_mode\": \"${TF_VAR_deployment_mode}\",
-            \"auto_delete_after_24h\": ${TF_VAR_auto_delete_after_24h},
-            \"setup_demo_clone\": ${TF_VAR_setup_demo_clone},
-            \"clone_target_url\": \"${TF_VAR_clone_target_url}\",
-            \"ssh_allowed_ip\": \"${TF_VAR_ssh_allowed_ip}\",
-            \"vm_name\": \"${TF_VAR_vm_name}\",
-            \"vm_size\": \"${TF_VAR_vm_size}\",
-            \"ssh_public_key\": \"${TF_VAR_ssh_public_key}\",
-            \"ssh_private_key\": \"${TF_VAR_ssh_private_key}\",
-            \"ssh_password\": \"${TF_VAR_ssh_password}\",
-            \"aws_access_key\": \"${TF_VAR_aws_access_key}\",
-            \"aws_secret_key\": \"${TF_VAR_aws_secret_key}\",
-            \"aws_session_token\": \"${TF_VAR_aws_session_token}\",
-            \"gcp_project_id\": \"${TF_VAR_gcp_project_id}\",
-            \"gcp_credentials\": \"${TF_VAR_gcp_credentials}\",
-            \"azure_client_id\": \"${TF_VAR_azure_client_id}\",
-            \"azure_client_secret\": \"${TF_VAR_azure_client_secret}\",
-            \"azure_subscription_id\": \"${TF_VAR_azure_subscription_id}\",
-            \"azure_tenant_id\": \"${TF_VAR_azure_tenant_id}\"
-          }" > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
+          cat <<EOF > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
+          {
+            "cloud_provider": "${TF_VAR_cloud_provider}",
+            "deployment_mode": "${TF_VAR_deployment_mode}",
+            "auto_delete_after_24h": ${TF_VAR_auto_delete_after_24h},
+            "setup_demo_clone": ${TF_VAR_setup_demo_clone},
+            "clone_target_url": "${TF_VAR_clone_target_url}",
+            "ssh_allowed_ip": "${TF_VAR_ssh_allowed_ip}",
+            "vm_name": "${TF_VAR_vm_name}",
+            "vm_size": "${TF_VAR_vm_size}",
+            "ssh_public_key": "${TF_VAR_ssh_public_key}",
+            "ssh_private_key": "${TF_VAR_ssh_private_key}",
+            "ssh_password": "${TF_VAR_ssh_password}",
+            "aws_access_key": "${TF_VAR_aws_access_key}",
+            "aws_secret_key": "${TF_VAR_aws_secret_key}",
+            "aws_session_token": "${TF_VAR_aws_session_token}",
+            "gcp_project_id": "${TF_VAR_gcp_project_id}",
+            "gcp_credentials": "${TF_VAR_gcp_credentials}",
+            "azure_client_id": "${TF_VAR_azure_client_id}",
+            "azure_client_secret": "${TF_VAR_azure_client_secret}",
+            "azure_subscription_id": "${TF_VAR_azure_subscription_id}",
+            "azure_tenant_id": "${TF_VAR_azure_tenant_id}"
+          }
+          EOF
 
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
