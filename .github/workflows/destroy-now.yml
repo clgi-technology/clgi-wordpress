@@ -1,12 +1,10 @@
-name: Destroy Now Old Deployments
+name: Terraform Destroy Now
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # daily at midnight UTC
   workflow_dispatch:
 
 jobs:
-  destroy_old:
+  destroy_now:
     runs-on: ubuntu-latest
 
     env:
@@ -27,20 +25,15 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Authenticate Terraform CLI with Terraform Cloud
+        run: |
+          mkdir -p ~/.terraform.d
+          echo "credentials \"app.terraform.io\" {
+            token = \"${{ secrets.TFE_TOKEN }}\"
+          }" > ~/.terraform.d/credentials.tfrc.json
+
       - name: Terraform Init (with Cloud Backend)
         run: terraform -chdir=deployments/aws init
 
-      - name: Retrieve Auto Delete Timestamp
-        id: get_auto_delete_at
-        run: |
-          AUTO_DELETE_AT=$(terraform -chdir=deployments/aws output -raw auto_delete_at || echo "")
-          echo "auto_delete_at=$AUTO_DELETE_AT" >> $GITHUB_OUTPUT
-
-      - name: Force Destroy Immediately (TEST ONLY)
-        run: |
-          echo "💣 Forcing immediate destroy for test purposes..."
-          terraform -chdir=deployments/aws destroy -auto-approve
-
-      - name: Skip Destroy - No AutoDeleteAt Output
-        if: steps.get_auto_delete_at.outputs.auto_delete_at == ''
-        run: echo "⚠️ No auto_delete_at output found; skipping destroy."
+      - name: Terraform Destroy (auto approve)
+        run: terraform -chdir=deployments/aws destroy -auto-approve
