@@ -1,6 +1,8 @@
 #!/bin/bash
 
-echo "🌐 Integrating CLGI.org clone into Django..."
+MODE=${1:-full}  # default to "full" if nothing is passed
+
+echo "🌐 Integrating CLGI.org clone into Django (mode: $MODE)..."
 
 # Define paths
 BASE_DIR="/opt/django-app"
@@ -11,12 +13,12 @@ TEMPLATE_DIR="$BASE_DIR/mysite/templates"
 mkdir -p "$STATIC_DIR"
 mkdir -p "$TEMPLATE_DIR"
 
-# Run the clone script
-python3 /home/ubuntu/scripts/clone_clgi.py https://www.clgi.org
+# Run the clone script with mode
+python3 /home/ubuntu/scripts/clone_clgi.py https://www.clgi.org "$MODE"
 
 # Move assets and HTML
-mv /home/ubuntu/sandbox/static/* "$STATIC_DIR/"
-mv /home/ubuntu/sandbox/static/index.html "$TEMPLATE_DIR/index.html"
+mv /home/ubuntu/sandbox/static/* "$STATIC_DIR/" 2>/dev/null || true
+mv /home/ubuntu/sandbox/static/index.html "$TEMPLATE_DIR/index.html" 2>/dev/null || true
 
 # Update Django settings if needed
 grep -q "'DIRS':" "$BASE_DIR/mysite/settings.py" || \
