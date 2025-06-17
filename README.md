@@ -152,7 +152,6 @@ From GitHub Artifacts: Users can download private_key.pem from the Actions run.
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
-│   ├── sync-tfc-vars.yml           # Syncs github secrets with terraform cloud (run this first to sync credentials)
 │   ├── terraform-apply-only.yml    # GitHub Actions workflow for running terraform apply command only
 │   ├── terraform-auto-destroy.yml  # GitHub Actions workflow for destroying previous deployment
 │   └── terraform.yml               # GitHub Actions workflow for deployment 
