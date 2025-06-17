@@ -63,35 +63,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Generate terraform.auto.tfvars for Terraform Cloud
+      - name: Manually Install Terraform
+        run: |
+          curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
+          unzip terraform.zip
+          sudo mv terraform /usr/local/bin/
+          terraform -version
+
+      - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
-          echo 'cloud_provider = "${TF_VAR_cloud_provider}"' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'deployment_mode = "${TF_VAR_deployment_mode}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'auto_delete_after_24h = ${TF_VAR_auto_delete_after_24h}' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'setup_demo_clone = ${TF_VAR_setup_demo_clone}' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'clone_target_url = "${TF_VAR_clone_target_url}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'ssh_allowed_ip = "${TF_VAR_ssh_allowed_ip}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'vm_name = "${TF_VAR_vm_name}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'vm_size = "${TF_VAR_vm_size}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'ssh_public_key = <<EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo "${TF_VAR_ssh_public_key}" >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'ssh_private_key = <<EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo "${TF_VAR_ssh_private_key}" >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'ssh_password = "${TF_VAR_ssh_password}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'aws_access_key = "${TF_VAR_aws_access_key}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'aws_secret_key = "${TF_VAR_aws_secret_key}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'aws_session_token = "${TF_VAR_aws_session_token}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'gcp_project_id = "${TF_VAR_gcp_project_id}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'gcp_credentials = <<EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo "${TF_VAR_gcp_credentials}" >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'EOP' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'azure_client_id = "${TF_VAR_azure_client_id}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'azure_client_secret = "${TF_VAR_azure_client_secret}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'azure_subscription_id = "${TF_VAR_azure_subscription_id}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
-          echo 'azure_tenant_id = "${TF_VAR_azure_tenant_id}"' >> deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars
+          echo '{
+            "cloud_provider": "${{ inputs.cloud_provider }}",
+            "deployment_mode": "${{ inputs.deployment_mode }}",
+            "auto_delete_after_24h": ${{ inputs.auto_delete_after_24h }},
+            "setup_demo_clone": ${{ inputs.setup_demo_clone != 'none' }},
+            "clone_target_url": "${{ inputs.clone_target_url }}",
+            "ssh_allowed_ip": "${{ inputs.ssh_allowed_ip }}",
+            "vm_name": "clgi-vm",
+            "vm_size": "t3.medium",
+            "ssh_public_key": "${{ secrets.SSH_PUBLIC_KEY }}",
+            "ssh_private_key": "${{ secrets.SSH_PRIVATE_KEY }}",
+            "ssh_password": "${{ secrets.SSH_PASSWORD }}",
+            "aws_access_key": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+            "aws_secret_key": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
+            "aws_session_token": "${{ secrets.AWS_SESSION_TOKEN }}",
+            "gcp_project_id": "${{ secrets.GCP_PROJECT_ID }}",
+            "gcp_credentials": "${{ secrets.GCP_CREDENTIALS_JSON }}",
+            "azure_client_id": "${{ secrets.AZURE_CLIENT_ID }}",
+            "azure_client_secret": "${{ secrets.AZURE_CLIENT_SECRET }}",
+            "azure_subscription_id": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+            "azure_tenant_id": "${{ secrets.AZURE_TENANT_ID }}"
+          }' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
 
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
@@ -101,11 +104,7 @@ jobs:
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           echo "Checking AWS credentials..."
-          if ! aws sts get-caller-identity; then
-            echo "❌ Invalid AWS credentials"
-            exit 1
-          fi
-          echo "✅ AWS credentials are valid"
+          aws sts get-caller-identity || (echo "❌ Invalid AWS credentials" && exit 1)
 
       - name: Check Azure Login (if Azure selected)
         if: ${{ inputs.cloud_provider == 'azure' }}
@@ -139,7 +138,7 @@ jobs:
 
       - name: Capture SSH Key for User
         run: |
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} output ssh_private_key > private_key.pem
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw ssh_private_key > private_key.pem
           chmod 600 private_key.pem
           cat private_key.pem
 
