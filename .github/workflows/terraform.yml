@@ -93,6 +93,11 @@ jobs:
             echo "✅ Terraform Cloud token detected"
           fi
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7  # or your preferred Terraform version
+
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
         run: |
