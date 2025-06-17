@@ -55,9 +55,8 @@ jobs:
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
 
-      # THIS is the key fix:
+      # Critical: Terraform Cloud API token from GitHub Secrets (case-sensitive)
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
-
 
     steps:
       - name: Checkout Code
@@ -79,6 +78,36 @@ jobs:
           else
             echo "✅ Terraform Cloud token detected"
           fi
+
+      - name: Check AWS Credentials (if AWS selected)
+        if: ${{ inputs.cloud_provider == 'aws' }}
+        run: |
+          echo "Checking AWS credentials..."
+          if ! aws sts get-caller-identity; then
+            echo "❌ AWS credentials not working"
+            exit 1
+          fi
+          echo "✅ AWS credentials valid"
+
+      - name: Check Azure Login (if Azure selected)
+        if: ${{ inputs.cloud_provider == 'azure' }}
+        run: |
+          echo "Checking Azure credentials..."
+          if ! az account show; then
+            echo "❌ Azure credentials not working"
+            exit 1
+          fi
+          echo "✅ Azure credentials valid"
+
+      - name: Check GCP Auth (if GCP selected)
+        if: ${{ inputs.cloud_provider == 'gcp' }}
+        run: |
+          echo "Checking GCP credentials..."
+          if ! gcloud auth list; then
+            echo "❌ GCP credentials not working"
+            exit 1
+          fi
+          echo "✅ GCP credentials valid"
 
       - name: Copy Terraform Modules, Templates, and Scripts Before Init
         run: |
@@ -104,7 +133,7 @@ jobs:
           else
             echo "✅ Terraform Cloud token successfully detected."
           fi
-   
+
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
