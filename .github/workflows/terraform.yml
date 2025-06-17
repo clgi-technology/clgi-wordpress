@@ -93,9 +93,18 @@ jobs:
 
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           echo "Checking AWS credentials..."
-          aws sts get-caller-identity || (echo "❌ Invalid AWS credentials" && exit 1)
+          if ! aws sts get-caller-identity; then
+            echo "❌ Invalid AWS credentials"
+            exit 1
+          fi
+          echo "✅ AWS credentials are valid"
+
 
       - name: Check Azure Login (if Azure selected)
         if: ${{ inputs.cloud_provider == 'azure' }}
