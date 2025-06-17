@@ -89,12 +89,14 @@ variable "aws_region" {
 variable "gcp_project_id" {
   type        = string
   description = "GCP Project ID"
+  default     = ""
 }
 
 variable "gcp_credentials" {
   type        = string
   description = "GCP Service Account JSON (optional, if not via env)"
   sensitive   = true
+  default     = ""
 }
 
 #############################
@@ -105,24 +107,28 @@ variable "azure_client_id" {
   type        = string
   description = "Azure Client ID"
   sensitive   = true
+  default     = ""
 }
 
 variable "azure_client_secret" {
   type        = string
   description = "Azure Client Secret"
   sensitive   = true
+  default     = ""
 }
 
 variable "azure_subscription_id" {
   type        = string
   description = "Azure Subscription ID"
   sensitive   = true
+  default     = ""
 }
 
 variable "azure_tenant_id" {
   type        = string
   description = "Azure Tenant ID"
   sensitive   = true
+  default     = ""
 }
 
 #############################
