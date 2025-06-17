@@ -76,6 +76,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7  # or your preferred Terraform version
+
       - name: Debug Terraform Variables Before Init
         run: |
           echo "TF_VAR_cloud_provider=${TF_VAR_cloud_provider}"
@@ -93,11 +98,7 @@ jobs:
             echo "✅ Terraform Cloud token detected"
           fi
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7  # or your preferred Terraform version
-
+      
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
         run: |
