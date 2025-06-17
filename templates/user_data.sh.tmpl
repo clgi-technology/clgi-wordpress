@@ -41,9 +41,9 @@ else
 fi
 
 # Optionally clone CLGI.org HTML
-%{ if setup_demo_clone == "true" }
-echo "🌐 Cloning demo content from: ${clone_target_url}"
-./install-clgi.sh
+%{ if setup_demo_clone != "none" }
+echo "🌐 Cloning demo content from: ${clone_target_url} with mode: ${setup_demo_clone}"
+./install-clgi.sh ${setup_demo_clone}
 %{ endif }
 
 echo "✅ Provisioning complete."
