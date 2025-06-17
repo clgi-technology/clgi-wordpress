@@ -174,7 +174,34 @@ From GitHub Artifacts: Users can download private_key.pem from the Actions run.
 | Azure          | sandbox / production | Django or WordPress |
 
 
-⚙️ **GitHub Actions Workflow**
+---
+
+## 🌐 Terraform Cloud VCS Integration
+
+Terraform Cloud is configured to connect directly to this GitHub repository via the VCS integration. This means:
+
+- Terraform Cloud automatically runs plans when changes are pushed.
+- Applies are managed by Terraform Cloud, respecting VCS as the single source of truth.
+- You cannot run `terraform apply` manually or via GitHub Actions for these workspaces.
+- Apply runs and state changes are visible **only inside the Terraform Cloud UI**.
+
+### Where to Find Logs:
+
+| Task                  | Location                  |
+|-----------------------|---------------------------|
+| Plan                  | GitHub Actions run logs   |
+| Apply                 | Terraform Cloud UI        |
+| State Management      | Terraform Cloud UI        |
+| Artifact Downloads    | GitHub Actions Artifacts  |
+
+---
+
+## 🌐 GitHub Actions Workflow
+The GitHub Actions workflow triggers Terraform `init`, `validate`, and `plan` commands on every push or manual run.
+
+**Important:**  
+Due to the VCS connection enforced by Terraform Cloud, **`terraform apply` is no longer run in GitHub Actions**.
+
 Trigger deployments via GitHub UI or CLI.
 
 Workflow file: .github/workflows/terraform.yml
