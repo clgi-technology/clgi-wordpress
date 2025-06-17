@@ -195,6 +195,85 @@ Terraform Cloud is configured to connect directly to this GitHub repository via 
 | Artifact Downloads    | GitHub Actions Artifacts  |
 
 ---
+## ⚙️ Terraform Configuration Steps
+
+Follow these steps to configure Terraform Cloud and prepare your environment for deployments:
+
+### 1. Create a Terraform Cloud Account & Organization
+
+- Sign up or log in at [https://app.terraform.io](https://app.terraform.io).
+- Create an organization if you don’t already have one.
+
+### 2. Create a Workspace Connected to Your GitHub Repo
+
+- In your Terraform Cloud organization, create a new workspace.
+- Choose **Version Control Workflow** and connect your GitHub repository.
+- Select the branch you want to track (e.g., `main`).
+- Set the **Terraform Working Directory** to the appropriate subfolder, e.g.:
+  - `deployments/aws`  
+  - `deployments/gcp`  
+  - `deployments/azure`
+
+### 3. Configure Workspace Variables
+
+In your Terraform Cloud workspace, add the following **Terraform Variables** (under **Variables > Terraform Variables**):
+
+| Name                  | Type     | Sensitive | Description                                      |
+|-----------------------|----------|-----------|------------------------------------------------|
+| `cloud_provider`      | string   | No        | Select your cloud provider: `aws`, `gcp`, or `azure` |
+| `deployment_mode`     | string   | No        | `sandbox` or `production`                        |
+| `auto_delete_after_24h` | boolean  | No        | `true` or `false` to auto-delete after 24 hours |
+| `vm_name`             | string   | No        | Name of the virtual machine                      |
+| `vm_size`             | string   | No        | Instance size (e.g. `t3.micro` for AWS)         |
+| `ssh_allowed_ip`      | string   | No        | CIDR range allowed for SSH access                |
+| `setup_demo_clone`    | boolean  | No        | `true` to clone demo website, otherwise `false` |
+| `clone_target_url`    | string   | No        | URL or repo for demo website (optional)          |
+| `region`             | string   | No        | Cloud region (optional fallback)                 |
+
+Add **Environment Variables** or **Terraform Variables** for your cloud credentials as **sensitive**:
+
+| Name                     | Description                         |
+|--------------------------|-----------------------------------|
+| AWS_ACCESS_KEY_ID         | AWS Access Key ID                  |
+| AWS_SECRET_ACCESS_KEY     | AWS Secret Access Key              |
+| AWS_SESSION_TOKEN        | AWS Session Token (optional)      |
+| GCP_CREDENTIALS          | GCP Service Account JSON           |
+| AZURE_CLIENT_ID          | Azure Client ID                   |
+| AZURE_CLIENT_SECRET      | Azure Client Secret               |
+| AZURE_SUBSCRIPTION_ID    | Azure Subscription ID             |
+| AZURE_TENANT_ID          | Azure Tenant ID                   |
+
+### 4. Configure GitHub Secrets (for GitHub Actions)
+
+Set these secrets in your GitHub repository **Settings > Secrets**:
+
+- `TF_TOKEN_APP_TERRAFORM_IO` — Your Terraform Cloud API token
+- `SSH_PRIVATE_KEY` — Private SSH key (PEM format)
+- `SSH_PUBLIC_KEY` — Public SSH key
+
+Include any cloud provider secrets as needed.
+
+### 5. Trigger Terraform Runs
+
+- Push changes to your GitHub repo branch to trigger Terraform Cloud runs automatically.
+- Or manually trigger runs in Terraform Cloud UI.
+- GitHub Actions will perform Terraform **plan** and output the results in the Actions logs.
+- Terraform Cloud manages **apply** steps according to the VCS workflow.
+
+### 6. Monitor Deployment & Retrieve Outputs
+
+- View Terraform plan results in GitHub Actions logs.
+- View apply status, logs, and state in Terraform Cloud workspace Runs.
+- Once applied, retrieve your VM’s public IP address from Terraform outputs.
+- SSH into your VM using the private key from GitHub Actions artifacts or your local copy.
+
+---
+
+**Tip:** Review your variables and credentials carefully to avoid leaks and ensure least privilege access.
+
+
+
+---
 
 ## 🌐 GitHub Actions Workflow
 The GitHub Actions workflow triggers Terraform `init`, `validate`, and `plan` commands on every push or manual run.
