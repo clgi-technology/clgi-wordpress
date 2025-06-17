@@ -73,28 +73,51 @@ jobs:
       - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
-          echo '{
-            "cloud_provider": "${{ inputs.cloud_provider }}",
-            "deployment_mode": "${{ inputs.deployment_mode }}",
-            "auto_delete_after_24h": ${{ inputs.auto_delete_after_24h }},
-            "setup_demo_clone": ${{ inputs.setup_demo_clone != 'none' }},
-            "clone_target_url": "${{ inputs.clone_target_url }}",
-            "ssh_allowed_ip": "${{ inputs.ssh_allowed_ip }}",
-            "vm_name": "clgi-vm",
-            "vm_size": "t3.medium",
-            "ssh_public_key": "${{ secrets.SSH_PUBLIC_KEY }}",
-            "ssh_private_key": "${{ secrets.SSH_PRIVATE_KEY }}",
-            "ssh_password": "${{ secrets.SSH_PASSWORD }}",
-            "aws_access_key": "${{ secrets.AWS_ACCESS_KEY_ID }}",
-            "aws_secret_key": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
-            "aws_session_token": "${{ secrets.AWS_SESSION_TOKEN }}",
-            "gcp_project_id": "${{ secrets.GCP_PROJECT_ID }}",
-            "gcp_credentials": "${{ secrets.GCP_CREDENTIALS_JSON }}",
-            "azure_client_id": "${{ secrets.AZURE_CLIENT_ID }}",
-            "azure_client_secret": "${{ secrets.AZURE_CLIENT_SECRET }}",
-            "azure_subscription_id": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
-            "azure_tenant_id": "${{ secrets.AZURE_TENANT_ID }}"
-          }' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
+
+          jq -n \
+            --arg cloud_provider "${{ inputs.cloud_provider }}" \
+            --arg deployment_mode "${{ inputs.deployment_mode }}" \
+            --argjson auto_delete_after_24h $([[ "${{ inputs.auto_delete_after_24h }}" == "true" ]] && echo true || echo false) \
+            --argjson setup_demo_clone $([[ "${{ inputs.setup_demo_clone }}" != "none" ]] && echo true || echo false) \
+            --arg clone_target_url "${{ inputs.clone_target_url }}" \
+            --arg ssh_allowed_ip "${{ inputs.ssh_allowed_ip }}" \
+            --arg vm_name "clgi-vm" \
+            --arg vm_size "t3.medium" \
+            --arg ssh_public_key "${{ secrets.SSH_PUBLIC_KEY }}" \
+            --arg ssh_private_key "${{ secrets.SSH_PRIVATE_KEY }}" \
+            --arg ssh_password "${{ secrets.SSH_PASSWORD }}" \
+            --arg aws_access_key "${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --arg aws_secret_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --arg aws_session_token "${{ secrets.AWS_SESSION_TOKEN }}" \
+            --arg gcp_project_id "${{ secrets.GCP_PROJECT_ID }}" \
+            --arg gcp_credentials "${{ secrets.GCP_CREDENTIALS_JSON }}" \
+            --arg azure_client_id "${{ secrets.AZURE_CLIENT_ID }}" \
+            --arg azure_client_secret "${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --arg azure_subscription_id "${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            --arg azure_tenant_id "${{ secrets.AZURE_TENANT_ID }}" \
+            '{
+              cloud_provider: $cloud_provider,
+              deployment_mode: $deployment_mode,
+              auto_delete_after_24h: $auto_delete_after_24h,
+              setup_demo_clone: $setup_demo_clone,
+              clone_target_url: $clone_target_url,
+              ssh_allowed_ip: $ssh_allowed_ip,
+              vm_name: $vm_name,
+              vm_size: $vm_size,
+              ssh_public_key: $ssh_public_key,
+              ssh_private_key: $ssh_private_key,
+              ssh_password: $ssh_password,
+              aws_access_key: $aws_access_key,
+              aws_secret_key: $aws_secret_key,
+              aws_session_token: $aws_session_token,
+              gcp_project_id: $gcp_project_id,
+              gcp_credentials: $gcp_credentials,
+              azure_client_id: $azure_client_id,
+              azure_client_secret: $azure_client_secret,
+              azure_subscription_id: $azure_subscription_id,
+              azure_tenant_id: $azure_tenant_id
+            }' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
+
 
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
