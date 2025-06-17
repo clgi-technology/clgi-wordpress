@@ -1,3 +1,8 @@
+# Generate a random suffix to avoid key name collisions
+resource "random_id" "key_suffix" {
+  byte_length = 4
+}
+
 # Generate SSH Key Pair
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
@@ -5,7 +10,7 @@ resource "tls_private_key" "ssh_key" {
 }
 
 resource "aws_key_pair" "generated_key" {
-  key_name   = "${var.vm_name}-key"
+  key_name   = "${var.vm_name}-${random_id.key_suffix.hex}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -16,6 +21,11 @@ output "ssh_private_key" {
 
 output "ssh_public_key" {
   value = tls_private_key.ssh_key.public_key_openssh
+}
+
+output "ssh_key_pair_name" {
+  description = "Dynamically generated AWS key pair name"
+  value       = aws_key_pair.generated_key.key_name
 }
 
 # User Data Script
