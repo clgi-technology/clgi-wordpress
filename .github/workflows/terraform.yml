@@ -157,8 +157,8 @@ jobs:
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
-      - name: Terraform Import Key Pair
-        run: terraform -chdir=deployments/aws import -ignore-remote-version aws_key_pair.generated_key clgi-deploy-key
+   # - name: Terraform Import Key Pair
+    #  run: terraform -chdir=deployments/aws import -ignore-remote-version aws_key_pair.generated_key clgi-deploy-key
 
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
