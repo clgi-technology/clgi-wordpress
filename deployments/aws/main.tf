@@ -30,7 +30,7 @@ data "template_file" "user_data" {
 }
 
 module "security_group" {
-  source         = "./modules/security_group"
+  source         = "../../modules/security_group"
   project_name   = var.vm_name
   vpc_id         = module.app.vpc_id
   ssh_ip_address = var.ssh_allowed_ip
@@ -38,7 +38,7 @@ module "security_group" {
 }
 
 module "app" {
-  source                = "./modules/aws"
+  source                = "../../modules/aws"
   vm_name               = var.vm_name
   vm_size               = var.vm_size
   aws_region            = var.aws_region
