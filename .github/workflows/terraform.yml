@@ -38,7 +38,7 @@ jobs:
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
       TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h == 'true' }}
-      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone != 'none' }}
+      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
@@ -72,7 +72,6 @@ jobs:
       - name: Normalize boolean inputs
         run: |
           echo "AUTO_DELETE=$( [[ '${{ inputs.auto_delete_after_24h }}' == 'true' ]] && echo true || echo false )" >> $GITHUB_ENV
-          echo "CLONE_DEMO=$( [[ '${{ inputs.setup_demo_clone }}' != 'none' ]] && echo true || echo false )" >> $GITHUB_ENV
 
       - name: Generate terraform.auto.tfvars.json
         run: |
@@ -82,7 +81,7 @@ jobs:
             --arg cloud_provider "${{ inputs.cloud_provider }}" \
             --arg deployment_mode "${{ inputs.deployment_mode }}" \
             --argjson auto_delete_after_24h "$AUTO_DELETE" \
-            --argjson setup_demo_clone "$CLONE_DEMO" \
+            --arg setup_demo_clone "${{ inputs.setup_demo_clone }}" \
             --arg clone_target_url "${{ inputs.clone_target_url }}" \
             --arg ssh_allowed_ip "${{ inputs.ssh_allowed_ip }}" \
             --arg vm_name "clgi-vm" \
@@ -155,9 +154,6 @@ jobs:
 
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
-
-      #- name: Terraform Import Key Pair
-      #  run: terraform -chdir=deployments/aws import -ignore-remote-version aws_key_pair.generated_key clgi-deploy-key
 
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
