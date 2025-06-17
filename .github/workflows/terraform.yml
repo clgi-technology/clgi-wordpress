@@ -7,22 +7,32 @@ on:
         description: "Cloud provider (aws, gcp, azure)"
         required: true
         type: choice
-        options: [aws, gcp, azure]
+        options:
+          - aws
+          - gcp
+          - azure
       deployment_mode:
         description: "Deployment mode"
         required: true
         type: choice
-        options: [sandbox, production]
+        options:
+          - sandbox
+          - production
       auto_delete_after_24h:
         description: "Enable auto-delete after 24h"
         required: true
         type: choice
-        options: ["true", "false"]
+        options:
+          - "true"
+          - "false"
       setup_demo_clone:
         description: "Clone demo app?"
         required: true
         type: choice
-        options: ["none", "basic", "full"]
+        options:
+          - "none"
+          - "basic"
+          - "full"
       clone_target_url:
         description: "Git URL to demo app (if cloning)"
         required: false
@@ -38,58 +48,90 @@ jobs:
     env:
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h }}
-      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone }}
+      # Convert string inputs to boolean for Terraform bool vars
+      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h == 'true' }}
+      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone != 'none' }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      # Optional env vars like credentials are auto-injected from GitHub Secrets
+      TF_TOKEN_app_terraform_io: ${{ vars.TF_TOKEN_app_terraform_io }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Configure Terraform Cloud Token from GitHub Secret
-        env:
-          TFC_TOKEN: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      - name: Debug Terraform Variables Before Init
         run: |
-          mkdir -p ~/.terraform.d
-          echo "{\"credentials\":{\"app.terraform.io\":{\"token\":\"${TFC_TOKEN}\"}}}" > ~/.terraform.d/credentials.tfrc.json
-          echo "✅ Terraform Cloud token configured"
+          echo "TF_VAR_cloud_provider=${TF_VAR_cloud_provider}"
+          echo "TF_VAR_deployment_mode=${TF_VAR_deployment_mode}"
+          echo "TF_VAR_auto_delete_after_24h=${TF_VAR_auto_delete_after_24h}"
+          echo "TF_VAR_setup_demo_clone=${TF_VAR_setup_demo_clone}"
+          echo "TF_VAR_clone_target_url=${TF_VAR_clone_target_url}"
+          echo "TF_VAR_ssh_allowed_ip=${TF_VAR_ssh_allowed_ip}"
+          echo "TF_VAR_vm_name=${TF_VAR_vm_name}"
+          echo "TF_VAR_vm_size=${TF_VAR_vm_size}"
+          if [ -z "$TF_TOKEN_app_terraform_io" ]; then
+            echo "❌ Terraform Cloud token is missing!"
+            exit 1
+          else
+            echo "✅ Terraform Cloud token detected"
+          fi
 
-      - name: Copy Required Files to Deployment Folder
+      - name: Copy Terraform Modules, Templates, and Scripts Before Init
         run: |
-          for dir in modules templates scripts; do
-            cp -r $dir deployments/${{ inputs.cloud_provider }}/
-          done
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
 
-      - name: Verify File Copy
+      - name: Verify Copied Terraform Files Before Init
         run: |
-          ls -la deployments/${{ inputs.cloud_provider }}/modules
-          ls -la deployments/${{ inputs.cloud_provider }}/templates
-          ls -la deployments/${{ inputs.cloud_provider }}/scripts
+          if [ ! -d "deployments/${{ inputs.cloud_provider }}/modules" ] || [ ! -d "deployments/${{ inputs.cloud_provider }}/templates" ] || [ ! -d "deployments/${{ inputs.cloud_provider }}/scripts" ]; then
+            echo "❌ Required Terraform modules, templates, or scripts are missing!"
+            exit 1
+          fi
+          echo "✅ All required Terraform files are present."
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
+      - name: Copy Terraform Modules, Templates, and Scripts Before Plan
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
+
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
+      - name: Copy Terraform Modules, Templates, and Scripts Before Validate
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
+
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
+
+      - name: Copy Terraform Modules, Templates, and Scripts Before Apply
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R scripts deployments/${{ inputs.cloud_provider }}/
 
       - name: Terraform Apply
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
 
       - name: Capture SSH Key for User
         run: |
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw ssh_private_key > private_key.pem
+          echo "🔑 Generated SSH Key:"
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} output ssh_private_key > private_key.pem
           chmod 600 private_key.pem
-          echo "🔑 SSH key captured"
+          cat private_key.pem
 
       - name: Store SSH Key in Artifact
         uses: actions/upload-artifact@v4
