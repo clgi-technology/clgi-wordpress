@@ -87,3 +87,9 @@ variable "aws_session_token" {
   description = "AWS Session Token (if using temporary credentials)"
   default     = ""
 }
+
+variable "ssh_private_key" {
+  description = "Private SSH key"
+  type        = string
+  default     = null
+}
