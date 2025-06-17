@@ -19,10 +19,9 @@ on:
         type: choice
         options: ["true", "false"]
       setup_demo_clone:
-        description: "Clone demo app?"
-        required: true
-        type: choice
-        options: [none, basic, full]
+        description: "Clone demo content? Options: none, basic, full"
+        required: false
+        default: "none"
       clone_target_url:
         description: "Git URL to demo app (if cloning)"
         required: false
