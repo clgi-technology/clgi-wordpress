@@ -70,6 +70,11 @@ jobs:
           sudo mv terraform /usr/local/bin/
           terraform -version
 
+      - name: Normalize boolean inputs
+        run: |
+          echo "AUTO_DELETE=$( [[ '${{ inputs.auto_delete_after_24h }}' == 'true' ]] && echo true || echo false )" >> $GITHUB_ENV
+          echo "CLONE_DEMO=$( [[ '${{ inputs.setup_demo_clone }}' != 'none' ]] && echo true || echo false )" >> $GITHUB_ENV
+
       - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
@@ -77,8 +82,8 @@ jobs:
           jq -n \
             --arg cloud_provider "${{ inputs.cloud_provider }}" \
             --arg deployment_mode "${{ inputs.deployment_mode }}" \
-            --argjson auto_delete_after_24h $([[ "${{ inputs.auto_delete_after_24h }}" == "true" ]] && echo true || echo false) \
-            --argjson setup_demo_clone $([[ "${{ inputs.setup_demo_clone }}" != "none" ]] && echo true || echo false) \
+            --argjson auto_delete_after_24h "$AUTO_DELETE" \
+            --argjson setup_demo_clone "$CLONE_DEMO" \
             --arg clone_target_url "${{ inputs.clone_target_url }}" \
             --arg ssh_allowed_ip "${{ inputs.ssh_allowed_ip }}" \
             --arg vm_name "clgi-vm" \
@@ -117,7 +122,6 @@ jobs:
               azure_subscription_id: $azure_subscription_id,
               azure_tenant_id: $azure_tenant_id
             }' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
-
 
       - name: Check AWS Credentials (if AWS selected)
         if: ${{ inputs.cloud_provider == 'aws' }}
