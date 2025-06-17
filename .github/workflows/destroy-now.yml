@@ -1,4 +1,4 @@
-name:Destroy Now Old Deployments
+name: Destroy Now Old Deployments
 
 on:
   schedule:
