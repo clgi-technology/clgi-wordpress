@@ -272,6 +272,18 @@ Include any cloud provider secrets as needed.
 
 **Tip:** Review your variables and credentials carefully to avoid leaks and ensure least privilege access.
 
+---
+### Where to Configure Credentials and Variables
+
+To enable the deployment pipeline, you need to configure secrets and variables in **both Terraform Cloud** and **GitHub**:
+
+- **Terraform Cloud Workspace Variables:**  
+  Store cloud provider credentials (AWS keys, GCP JSON, Azure secrets), deployment parameters (VM name, region, instance size), and SSH keys as Terraform variables. These are used during Terraform runs to provision infrastructure.
+
+- **GitHub Repository Secrets:**  
+  Store the Terraform Cloud API token (`TF_TOKEN_APP_TERRAFORM_IO`) and SSH keys here. GitHub Actions workflows use these secrets to authenticate with Terraform Cloud and handle provisioning securely.
+
+This separation ensures that sensitive data is managed securely, and each platform has the data it needs to perform its role.
 
 
 ---
