@@ -48,14 +48,16 @@ jobs:
     env:
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
       TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
-      # Convert string inputs to boolean for Terraform bool vars
       TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h == 'true' }}
       TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone != 'none' }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      TF_TOKEN_app_terraform_io: ${{ vars.TF_TOKEN_app_terraform_io }}
+
+      # THIS is the key fix:
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+
 
     steps:
       - name: Checkout Code
