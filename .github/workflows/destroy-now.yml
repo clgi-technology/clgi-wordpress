@@ -1,4 +1,4 @@
-name: Terraform Auto Destroy Old Deployments
+name:Destroy Now Old Deployments
 
 on:
   schedule:
