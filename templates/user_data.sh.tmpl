@@ -3,13 +3,24 @@ set -e
 
 echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
 
-# Install Python and dependencies for cloning script
-apt-get update
-apt-get install -y python3 python3-pip
+# Detect package manager and install Python3 and dependencies
+if command -v yum >/dev/null 2>&1; then
+  echo "Using yum package manager"
+  yum update -y
+  yum install -y python3 python3-pip curl
+elif command -v apt-get >/dev/null 2>&1; then
+  echo "Using apt-get package manager"
+  apt-get update
+  apt-get install -y python3 python3-pip curl
+else
+  echo "Unsupported package manager. Exiting."
+  exit 1
+fi
+
 pip3 install requests beautifulsoup4
 
-mkdir -p /home/ubuntu/scripts
-cd /home/ubuntu/scripts
+mkdir -p /home/ec2-user/scripts
+cd /home/ec2-user/scripts
 
 # Download provisioning scripts from GitHub
 SCRIPTS_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
