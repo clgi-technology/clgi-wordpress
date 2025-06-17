@@ -160,8 +160,8 @@ jobs:
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
-      - name: Terraform Apply
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
+   #  - name: Terraform Apply
+   #    run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
 
       - name: Capture SSH Key for User
         run: |
