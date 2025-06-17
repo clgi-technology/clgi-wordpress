@@ -28,9 +28,15 @@ jobs:
       - name: Authenticate Terraform CLI with Terraform Cloud
         run: |
           mkdir -p ~/.terraform.d
-          echo "credentials \"app.terraform.io\" {
-            token = \"${{ secrets.TFE_TOKEN }}\"
-          }" > ~/.terraform.d/credentials.tfrc.json
+          cat > ~/.terraform.d/credentials.tfrc.json <<EOF
+          {
+            "credentials": {
+              "app.terraform.io": {
+                "token": "${{ secrets.TFE_TOKEN }}"
+              }
+            }
+          }
+          EOF
 
       - name: Terraform Init (with Cloud Backend)
         run: terraform -chdir=deployments/aws init
