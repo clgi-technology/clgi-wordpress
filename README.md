@@ -217,6 +217,7 @@ Follow these steps to configure Terraform Cloud and prepare your environment for
 ### 3. Configure Workspace Variables
 
 In your Terraform Cloud workspace, add the following **Terraform Variables** (under **Variables > Terraform Variables**):
+NOTE: Case sensitive, keep names lower case in Terraform and all Upper case in Github Secret
 
 | Name                  | Type     | Sensitive | Description                                      |
 |-----------------------|----------|-----------|------------------------------------------------|
