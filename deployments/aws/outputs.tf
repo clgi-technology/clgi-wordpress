@@ -26,3 +26,9 @@ output "auto_delete_at" {
   description = "Timestamp when deployment should auto-expire (UTC, ISO 8601)"
   value       = var.auto_delete_after_24h ? timeadd(timestamp(), "24h") : null
 }
+
+output "vm_ip" {
+  description = "The public IP address of the VM"
+  value       = aws_instance.my_vm.public_ip
+  sensitive   = false
+}
