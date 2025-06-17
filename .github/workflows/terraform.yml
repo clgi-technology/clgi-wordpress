@@ -95,6 +95,16 @@ jobs:
           fi
           echo "✅ All required Terraform files are present."
 
+      - name: Debug Terraform Cloud Token Injection
+        run: |
+          echo "Token length: ${#TF_TOKEN_app_terraform_io}"
+          if [ -z "$TF_TOKEN_app_terraform_io" ]; then
+            echo "❌ Terraform Cloud token is missing!"
+            exit 1
+          else
+            echo "✅ Terraform Cloud token successfully detected."
+          fi
+   
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
