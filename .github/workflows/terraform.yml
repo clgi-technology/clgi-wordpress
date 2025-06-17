@@ -157,14 +157,26 @@ jobs:
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
-   # - name: Terraform Import Key Pair
-    #  run: terraform -chdir=deployments/aws import -ignore-remote-version aws_key_pair.generated_key clgi-deploy-key
+      #- name: Terraform Import Key Pair
+      #  run: terraform -chdir=deployments/aws import -ignore-remote-version aws_key_pair.generated_key clgi-deploy-key
 
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
-          
+
       - name: Terraform Apply
+        id: apply
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
+        continue-on-error: true
+
+      - name: Recover Terraform State (if apply failed)
+        if: failure() && steps.apply.outcome == 'failure'
+        run: |
+          if [ -f deployments/${{ inputs.cloud_provider }}/errored.tfstate ]; then
+            echo "Found errored.tfstate. Attempting to push state..."
+            terraform -chdir=deployments/${{ inputs.cloud_provider }} state push deployments/${{ inputs.cloud_provider }}/errored.tfstate
+          else
+            echo "No errored.tfstate found. Nothing to push."
+          fi
 
       - name: Capture SSH Key for User
         run: |
