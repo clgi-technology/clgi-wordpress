@@ -26,7 +26,7 @@
 This project provides a **modular, cloud-agnostic Terraform deployment system** for provisioning virtual machines on **AWS, GCP, and Azure**, with features including:
 
 - ✅ Environment-based deployments (`sandbox` vs `production`)  
-- ✅ Tech stack provisioning: Django or WordPress  
+- ✅ Tech stack provisioning: Django or WordPress  (Not Working at the moment)
 - ✅ Auto-expiry logic (auto-delete infrastructure after 24h)  (Not Working at the moment)
 - ✅ GitHub Actions CI/CD integration  
 - ✅ Optional website cloning on VM for demo/testing (Not working at the moment)
