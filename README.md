@@ -176,25 +176,6 @@ From GitHub Artifacts: Users can download private_key.pem from the Actions run.
 
 ---
 
-## 🌐 Terraform Cloud VCS Integration
-
-Terraform Cloud is configured to connect directly to this GitHub repository via the VCS integration. This means:
-
-- Terraform Cloud automatically runs plans when changes are pushed.
-- Applies are managed by Terraform Cloud, respecting VCS as the single source of truth.
-- You cannot run `terraform apply` manually or via GitHub Actions for these workspaces.
-- Apply runs and state changes are visible **only inside the Terraform Cloud UI**.
-
-### Where to Find Logs:
-
-| Task                  | Location                  |
-|-----------------------|---------------------------|
-| Plan                  | GitHub Actions run logs   |
-| Apply                 | Terraform Cloud UI        |
-| State Management      | Terraform Cloud UI        |
-| Artifact Downloads    | GitHub Actions Artifacts  |
-
----
 ## ⚙️ Terraform Configuration Steps
 
 Follow these steps to configure Terraform Cloud and prepare your environment for deployments:
@@ -273,6 +254,29 @@ Include any cloud provider secrets as needed.
 **Tip:** Review your variables and credentials carefully to avoid leaks and ensure least privilege access.
 
 ---
+
+## 🌐 Terraform Cloud VCS Integration (Optional)
+
+Terraform Cloud is configured to connect directly to this GitHub repository via the VCS integration. This means:
+
+- Terraform Cloud automatically runs plans when changes are pushed.
+- Applies are managed by Terraform Cloud, respecting VCS as the single source of truth.
+- You cannot run `terraform apply` manually or via GitHub Actions for these workspaces.
+- Apply runs and state changes are visible **only inside the Terraform Cloud UI**.
+
+### Where to Find Logs:
+
+| Task                  | Location                  |
+|-----------------------|---------------------------|
+| Plan                  | GitHub Actions run logs   |
+| Apply                 | Terraform Cloud UI        |
+| State Management      | Terraform Cloud UI        |
+| Artifact Downloads    | GitHub Actions Artifacts  |
+
+To enable, commit out in the terraflow.yml workflow file the lines for terraform apply.
+
+---
+
 ### Where to Configure Credentials and Variables
 
 To enable the deployment pipeline, you need to configure secrets and variables in **both Terraform Cloud** and **GitHub**:
