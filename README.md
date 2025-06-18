@@ -79,7 +79,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ```
 *In Github dashboard Go to your repository's "settings" tab, select "Actions"  and select "Secrets" and click "New Secret".*
 
-![Alt Secret2](https://docs.github.com/assets/cb-57155/mw-1440/images/help/repository/actions-secrets-tab.webp))
+![Alt Secret2](https://docs.github.com/assets/cb-57155/mw-1440/images/help/repository/actions-secrets-tab.webp)
 
 ---
 
