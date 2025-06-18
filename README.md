@@ -54,7 +54,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 
 ---
 
-### 1. Prepare Cloud Credentials and Add Them as Github Secrets [**Clone the Repository**](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+### 1. [**Clone the Repository**](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 
 
 *Navigate to your repository on GitHub, click the green "Code" button, and copy the URL to clone the repository into your Github account.*
@@ -66,13 +66,18 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
   ```
 ---
 
-### 2. Prepare Cloud Credentials and Add Them as Terraform [**Secrets**](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables)
+### 2. Prepare Cloud Credentials and Add Them as Terraform [**Secrets**](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables) and Github [**Secrets**]([https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions))
 
 
 
 *In Terraform dashboard Go to your repository's "Workspace" tab, select "Variables" and click "New variable".*
 
 ![Alt Secret](https://i.sstatic.net/tuj70.png)
+
+```
+
+![Alt Secret2]([https://i.sstatic.net/tuj70.png](https://docs.github.com/assets/cb-57155/mw-1440/images/help/repository/actions-secrets-tab.webp))
+
 ---
 
 ### 3. Trigger Deployment via Terraform Run Triggers or via GitHub Actions [Workflow](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow)
