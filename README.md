@@ -75,7 +75,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
 ![Alt Secret](https://i.sstatic.net/tuj70.png)
 
 ```
-
+```
 ![Alt Secret2]([https://i.sstatic.net/tuj70.png](https://docs.github.com/assets/cb-57155/mw-1440/images/help/repository/actions-secrets-tab.webp))
 
 ---
