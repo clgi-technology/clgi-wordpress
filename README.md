@@ -29,7 +29,7 @@ This project provides a **modular, cloud-agnostic Terraform deployment system** 
 - ✅ Tech stack provisioning: Django or WordPress  
 - ✅ Auto-expiry logic (auto-delete infrastructure after 24h)  
 - ✅ GitHub Actions CI/CD integration  
-- ✅ Optional website cloning on VM for demo/testing
+- ✅ Optional website cloning on VM for demo/testing (Not working at the moment)
 
   **NOTE:** All is done via Github action to easy allow for mobility but you may prefer to use command line as well.
 
