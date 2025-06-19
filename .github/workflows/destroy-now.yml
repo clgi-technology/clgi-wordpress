@@ -34,7 +34,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Terraform
+      - name: Manually Install Terraform
         run: |
           curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
           unzip terraform.zip
@@ -44,10 +44,36 @@ jobs:
       - name: Authenticate Terraform CLI with Terraform Cloud
         run: |
           mkdir -p ~/.terraform.d
-          echo '{"credentials":{"app.terraform.io":{"token":"'"${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"'"}}}' > ~/.terraform.d/credentials.tfrc.json
+          echo "{\"credentials\":{\"app.terraform.io\":{\"token\":\"${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}\"}}}" > ~/.terraform.d/credentials.tfrc.json
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
+      - name: Select Terraform Workspace
+        run: |
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace select clgi-wordpress-${{ inputs.cloud_provider }} || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace new clgi-wordpress-${{ inputs.cloud_provider }}
+
+      - name: Wait for Terraform Cloud to be ready
+        run: |
+          echo "Waiting 10 seconds for Terraform Cloud backend to be ready..."
+          sleep 10
+
+      - name: Create terraform.tfvars for Destroy
+        run: |
+          cat > deployments/${{ inputs.cloud_provider }}/terraform.tfvars <<EOF
+          ssh_password = "${{ env.TF_VAR_ssh_password }}"
+          ssh_private_key = "${{ env.TF_VAR_ssh_private_key }}"
+          ssh_public_key = "${{ env.TF_VAR_ssh_public_key }}"
+          aws_access_key = "${{ env.TF_VAR_aws_access_key }}"
+          aws_secret_key = "${{ env.TF_VAR_aws_secret_key }}"
+          aws_session_token = "${{ env.TF_VAR_aws_session_token }}"
+          gcp_project_id = "${{ env.TF_VAR_gcp_project_id }}"
+          gcp_credentials = "${{ env.TF_VAR_gcp_credentials }}"
+          azure_client_id = "${{ env.TF_VAR_azure_client_id }}"
+          azure_client_secret = "${{ env.TF_VAR_azure_client_secret }}"
+          azure_subscription_id = "${{ env.TF_VAR_azure_subscription_id }}"
+          azure_tenant_id = "${{ env.TF_VAR_azure_tenant_id }}"
+          EOF
+
       - name: Terraform Destroy (auto approve)
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} destroy -auto-approve
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} destroy -auto-approve -var-file=terraform.tfvars
