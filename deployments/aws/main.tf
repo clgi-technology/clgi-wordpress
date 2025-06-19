@@ -22,7 +22,7 @@ data "template_file" "user_data" {
     deployment_mode  = var.deployment_mode
     setup_demo_clone = var.setup_demo_clone ? "true" : "false"
     clone_target_url = var.clone_target_url
-    SCRIPTS_URL      = var.SCRIPTS_URL
+    scripts_url      = var.scripts_url
   }
 }
 
