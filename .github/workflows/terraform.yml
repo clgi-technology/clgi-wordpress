@@ -149,15 +149,9 @@ jobs:
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
           cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
 
-      # -- FIXED: Terraform Init BEFORE workspace selection --
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
-      - name: Select or Create Terraform Workspace
-        run: |
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace list | grep test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace new test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace select test-workspace
-
-      # -- ADDED: Refresh state before plan --
       - name: Terraform Refresh
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} refresh
 
