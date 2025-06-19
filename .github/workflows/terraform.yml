@@ -62,7 +62,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Terraform
+      - name: Manually Install Terraform
         run: |
           curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
           unzip terraform.zip
@@ -76,7 +76,6 @@ jobs:
       - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
-
           jq -n \
             --arg cloud_provider "${{ inputs.cloud_provider }}" \
             --arg deployment_mode "${{ inputs.deployment_mode }}" \
@@ -121,34 +120,56 @@ jobs:
               azure_tenant_id: $azure_tenant_id
             }' > deployments/${{ inputs.cloud_provider }}/terraform.auto.tfvars.json
 
-      - name: Copy Terraform Modules and Templates
+      - name: Check Cloud Provider Credentials
+        if: ${{ inputs.cloud_provider == 'aws' || inputs.cloud_provider == 'azure' || inputs.cloud_provider == 'gcp' }}
         run: |
-          mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates
-          cp -R modules deployments/${{ inputs.cloud_provider }}/
-          cp -R templates deployments/${{ inputs.cloud_provider }}/
+          if [[ "${{ inputs.cloud_provider }}" == "aws" ]]; then
+            aws sts get-caller-identity || (echo "❌ Invalid AWS credentials" && exit 1)
+          elif [[ "${{ inputs.cloud_provider }}" == "azure" ]]; then
+            az account show || (echo "❌ Invalid Azure credentials" && exit 1)
+          elif [[ "${{ inputs.cloud_provider }}" == "gcp" ]]; then
+            echo "$TF_VAR_gcp_credentials" > "$HOME/gcp-creds.json"
+            gcloud auth activate-service-account --key-file="$HOME/gcp-creds.json"
+            gcloud auth list || (echo "❌ Invalid GCP credentials" && exit 1)
+          fi
+
+      - name: Copy Modules, Templates, and Scripts
+        run: |
+          mkdir -p deployments/${{ inputs.cloud_provider }}/modules
+          mkdir -p deployments/${{ inputs.cloud_provider }}/templates
+          mkdir -p deployments/${{ inputs.cloud_provider }}/scripts
+          cp -R modules/${{ inputs.cloud_provider }} deployments/${{ inputs.cloud_provider }}/modules/
+          cp -R templates/* deployments/${{ inputs.cloud_provider }}/templates/
+          cp -R scripts/* deployments/${{ inputs.cloud_provider }}/scripts/
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
       - name: Terraform Validate
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
+        run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
       - name: Terraform Plan
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
+        run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
-      - name: Terraform Apply
+      - name: Terraform Apply (with refresh)
         id: apply
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
+        run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -refresh-only -lock-timeout=60s
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
         continue-on-error: true
 
       - name: Recover Terraform State (if apply failed)
         if: failure() && steps.apply.outcome == 'failure'
         run: |
           if [ -f deployments/${{ inputs.cloud_provider }}/errored.tfstate ]; then
-            echo "Found errored.tfstate. Attempting to push state..."
             terraform -chdir=deployments/${{ inputs.cloud_provider }} state push deployments/${{ inputs.cloud_provider }}/errored.tfstate
           else
-            echo "No errored.tfstate found. Nothing to push."
+            echo "No errored.tfstate found."
           fi
 
       - name: Capture SSH Key for User
