@@ -1,88 +1,141 @@
 #!/bin/bash
-set -euxo pipefail
-export DEBIAN_FRONTEND=noninteractive
+set -euo pipefail
+exec > /var/log/user_data.log 2>&1
 
-echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
+echo "📦 Bootstrapping VM to scrape www.clgi.org with Python scraper"
 
-# Wait for package manager lock (up to 5 minutes)
-for i in $(seq 1 30); do
-  if ! lsof /var/run/yum.pid >/dev/null 2>&1 && ! lsof /var/run/dpkg.lock >/dev/null 2>&1; then
-    break
-  fi
-  echo "⏳ Waiting for package manager lock..."
-  sleep 10
-done
-
-# Install dependencies
+# Detect package manager and install dependencies
 if command -v yum >/dev/null 2>&1; then
-  echo "Using yum package manager"
-  yum update -y
-  yum install -y python3 python3-pip curl dos2unix
+  pkg_mgr="yum"
 elif command -v apt-get >/dev/null 2>&1; then
-  echo "Using apt-get package manager"
-  apt-get update -y
-  apt-get install -y python3 python3-pip curl dos2unix
+  pkg_mgr="apt-get"
 else
-  echo "❌ Unsupported package manager. Exiting."
+  echo "Unsupported package manager. Exiting."
   exit 1
 fi
 
-pip3 install --user requests beautifulsoup4
-
-mkdir -p /home/ec2-user/scripts
-cd /home/ec2-user/scripts
-
-# Define script URLs
-scripts_url="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
-
-# Download or fall back to embedded scripts
-download_or_fallback() {
-  local script_name="$1"
-  local fallback_content="$2"
-  if ! curl --retry 5 --retry-delay 5 -fSL "${scripts_url}/${script_name}" -o "${script_name}"; then
-    echo "⚠️ Failed to download ${script_name}, using fallback"
-    echo "${fallback_content}" > "${script_name}"
-  fi
-  dos2unix "${script_name}" || true
-  chmod +x "${script_name}"
-}
-
-# Fallback install-django.sh
-fallback_django='#!/bin/bash
-echo "⚠️ Running fallback Django installer"
-pip3 install --user django gunicorn
-'
-
-# Fallback install-wordpress.sh
-fallback_wordpress='#!/bin/bash
-echo "⚠️ Running fallback WordPress installer"
-yum install -y httpd php php-mysqlnd mariadb-server -y || apt-get install -y apache2 php libapache2-mod-php mariadb-server
-'
-
-# Fallback install-clgi.sh
-fallback_clgi='#!/bin/bash
-MODE=$1
-echo "⚠️ Running fallback CLGI demo clone (mode=$MODE)"
-echo "<html><body><h1>CLGI Demo - Mode: $MODE</h1></body></html>" > /var/www/html/index.html
-'
-
-download_or_fallback install-django.sh "$fallback_django"
-download_or_fallback install-wordpress.sh "$fallback_wordpress"
-download_or_fallback install-clgi.sh "$fallback_clgi"
-
-# Run stack installer
-if [ "${deployment_mode}" = "sandbox" ]; then
-  echo "⚙️ Installing Django stack..."
-  ./install-django.sh || { echo "❌ Django install failed"; exit 1; }
-else
-  echo "⚙️ Installing WordPress stack..."
-  ./install-wordpress.sh || { echo "❌ WordPress install failed"; exit 1; }
+echo "Installing dependencies with $pkg_mgr"
+if [ "$pkg_mgr" = "yum" ]; then
+  yum update -y
+  yum install -y python3 python3-pip httpd git
+  systemctl enable httpd
+elif [ "$pkg_mgr" = "apt-get" ]; then
+  apt-get update
+  apt-get install -y python3 python3-pip apache2 git
+  systemctl enable apache2
 fi
 
-# Clone optional demo content
-if [ "${setup_demo_clone}" != "none" ]; then
-  echo "🌐 Cloning demo content from ${clone_target_url}, mode ${setup_demo_clone}"
-  ./install-clgi.sh "${setup_demo_clone}" || echo "⚠️ install-clgi.sh failed, continuing"
+pip3 install --upgrade pip
+pip3 install requests beautifulsoup4
+
+WEBROOT="/var/www/html/clgi-demo"
+mkdir -p "$WEBROOT"
+chown -R ec2-user:ec2-user "$WEBROOT"
+
+SCRAPER_PATH="/home/ec2-user/scrape_clgi.py"
+
+echo "Writing Python scraper script to $SCRAPER_PATH"
+cat > "$SCRAPER_PATH" <<'EOF'
+#!/usr/bin/env python3
+import os
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
+
+BASE_URL = "https://www.clgi.org/"
+OUTPUT_DIR = "/var/www/html/clgi-demo"
+
+def save_file(path, content, mode='wb'):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, mode) as f:
+        f.write(content)
+
+def is_valid_url(url):
+    parsed = urlparse(url)
+    return parsed.scheme in ('http', 'https')
+
+def get_local_path(url):
+    parsed = urlparse(url)
+    path = parsed.path
+    if path.endswith('/'):
+        path += 'index.html'
+    elif not os.path.splitext(path)[1]:
+        path += '.html'
+    return os.path.join(OUTPUT_DIR, path.lstrip('/'))
+
+def scrape_page(url, visited):
+    if url in visited:
+        return
+    visited.add(url)
+
+    print(f"Scraping {url}")
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"Failed to fetch {url}: {e}")
+        return
+
+    soup = BeautifulSoup(resp.text, 'html.parser')
+
+    local_path = get_local_path(url)
+    save_file(local_path, resp.text.encode('utf-8'))
+
+    tags_attrs = {
+        'img': 'src',
+        'link': 'href',
+        'script': 'src',
+    }
+
+    for tag, attr in tags_attrs.items():
+        for element in soup.find_all(tag):
+            asset_url = element.get(attr)
+            if not asset_url:
+                continue
+            full_url = urljoin(url, asset_url)
+            if not is_valid_url(full_url):
+                continue
+
+            asset_local_path = get_local_path(full_url)
+            if not os.path.exists(asset_local_path):
+                try:
+                    r = requests.get(full_url)
+                    r.raise_for_status()
+                    save_file(asset_local_path, r.content)
+                except Exception as e:
+                    print(f"Failed to download asset {full_url}: {e}")
+
+            rel_path = os.path.relpath(asset_local_path, os.path.dirname(local_path))
+            element[attr] = rel_path.replace('\\', '/')
+
+    save_file(local_path, soup.prettify('utf-8'))
+
+    for a in soup.find_all('a', href=True):
+        link = urljoin(url, a['href'])
+        if link.startswith(BASE_URL):
+            scrape_page(link, visited)
+
+def main():
+    print(f"Starting scrape of {BASE_URL} into {OUTPUT_DIR}")
+    scrape_page(BASE_URL, set())
+    print("Scraping complete.")
+
+if __name__ == '__main__':
+    main()
+EOF
+
+chmod +x "$SCRAPER_PATH"
+
+echo "Running Python scraper..."
+python3 "$SCRAPER_PATH"
+
+echo "Setting permissions for web server"
+if [ "$pkg_mgr" = "yum" ]; then
+  chown -R apache:apache "$WEBROOT"
+  systemctl restart httpd
+elif [ "$pkg_mgr" = "apt-get" ]; then
+  chown -R www-data:www-data "$WEBROOT"
+  systemctl restart apache2
 fi
 
-echo "✅ Provisioning complete."
+echo "✅ Scraping and deployment complete. Website available at VM_IP/clgi-demo"
