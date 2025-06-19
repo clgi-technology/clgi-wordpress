@@ -160,7 +160,7 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
         continue-on-error: true
 
       - name: Recover Terraform State (if apply failed)
