@@ -6,3 +6,4 @@ deployment_mode       = "sandbox"
 setup_demo_clone      = false
 clone_target_url      = "https://www.clgi.org"
 auto_delete_after_24h = true
+SCRIPTS_URL           = "https://raw.githubusercontent.com/your-org/your-repo/main/scripts/"
