@@ -36,6 +36,8 @@ module "security_group" {
 
 module "app" {
   source                = "../../modules/aws"
+  enabled               = true  # Add this explicitly
+
   vm_name               = var.vm_name
   vm_size               = var.vm_size
   aws_region            = var.aws_region
