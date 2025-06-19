@@ -156,6 +156,7 @@ From GitHub Artifacts: Users can download private_key.pem from the Actions run.
 │   └── user_data.sh.tmpl  # Cloud-init bootstrap template
 ├── scripts/
 │   ├── clone_clgi.py
+│   ├── scrape_clgi.py
 │   ├── install-django.sh
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
