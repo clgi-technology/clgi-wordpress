@@ -29,11 +29,13 @@ EOF
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Create Django project
-django-admin startproject mysite .
+# Create Django project if not exists
+if [ ! -f manage.py ]; then
+  django-admin startproject mysite .
+fi
 
-# Configure PostgreSQL
-sudo -u postgres psql <<EOF
+# Configure PostgreSQL database and user if not already present
+sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'mysite_db'" | grep -q 1 || sudo -u postgres psql <<EOF
 CREATE DATABASE mysite_db;
 CREATE USER mysite_user WITH PASSWORD 'securepassword';
 ALTER ROLE mysite_user SET client_encoding TO 'utf8';
@@ -42,16 +44,19 @@ ALTER ROLE mysite_user SET timezone TO 'UTC';
 GRANT ALL PRIVILEGES ON DATABASE mysite_db TO mysite_user;
 EOF
 
-# Update Django settings
-sed -i "s/ENGINE': 'django.db.backends.sqlite3'/ENGINE': 'django.db.backends.postgresql'/" mysite/settings.py
-sed -i "s/NAME': BASE_DIR \/ 'db.sqlite3'/NAME': 'mysite_db',\n        'USER': 'mysite_user',\n        'PASSWORD': 'securepassword',\n        'HOST': 'localhost',\n        'PORT': '5432'/" mysite/settings.py
-echo -e "\nSTATIC_ROOT = os.path.join(BASE_DIR, 'static/')\n" >> mysite/settings.py
+# Update Django settings with PostgreSQL config if not already updated
+SETTINGS_FILE="mysite/settings.py"
+if ! grep -q "ENGINE': 'django.db.backends.postgresql'" "$SETTINGS_FILE"; then
+  sed -i "s/'ENGINE': 'django.db.backends.sqlite3'/'ENGINE': 'django.db.backends.postgresql'/" "$SETTINGS_FILE"
+  sed -i "s/'NAME': BASE_DIR \/ 'db.sqlite3'/'NAME': 'mysite_db',\n        'USER': 'mysite_user',\n        'PASSWORD': 'securepassword',\n        'HOST': 'localhost',\n        'PORT': '5432'/" "$SETTINGS_FILE"
+  echo -e "\nSTATIC_ROOT = os.path.join(BASE_DIR, 'static/')\n" >> "$SETTINGS_FILE"
+fi
 
 # Run migrations and collect static files
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-# Start Gunicorn server
+# Start Gunicorn server in daemon mode
 gunicorn mysite.wsgi:application --bind 0.0.0.0:8000 --daemon
 
 echo "✅ Django installed and running at http://<server-ip>:8000"
