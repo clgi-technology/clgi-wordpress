@@ -26,10 +26,10 @@ cd /home/ec2-user/scripts
 # Download provisioning scripts from GitHub
 scripts_url="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
 
-echo "⬇️ Downloading scripts from $SCRIPTS_URL"
-curl -O "${SCRIPTS_URL}/install-django.sh"
-curl -O "${SCRIPTS_URL}/install-wordpress.sh"
-curl -O "${SCRIPTS_URL}/install-clgi.sh"
+echo "⬇️ Downloading scripts from $scripts_url"
+curl -O "${scripts_url}/install-django.sh"
+curl -O "${scripts_url}/install-wordpress.sh"
+curl -O "${scripts_url}/install-clgi.sh"
 
 # Ensure scripts use Unix-style line endings
 dos2unix install-*.sh
