@@ -41,18 +41,16 @@ jobs:
           sudo mv terraform /usr/local/bin/
           terraform -version
 
-      - name: Authenticate Terraform CLI with Terraform Cloud
+      - name: Authenticate Terraform CLI with Terraform Cloud (no heredoc)
         run: |
           mkdir -p ~/.terraform.d
-          cat > ~/.terraform.d/credentials.tfrc.json <<EOF
-{
-  "credentials": {
-    "app.terraform.io": {
-      "token": "${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"
-    }
-  }
-}
-EOF
+          echo '{' > ~/.terraform.d/credentials.tfrc.json
+          echo '  "credentials": {' >> ~/.terraform.d/credentials.tfrc.json
+          echo '    "app.terraform.io": {' >> ~/.terraform.d/credentials.tfrc.json
+          echo '      "token": "'"${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"'"' >> ~/.terraform.d/credentials.tfrc.json
+          echo '    }' >> ~/.terraform.d/credentials.tfrc.json
+          echo '  }' >> ~/.terraform.d/credentials.tfrc.json
+          echo '}' >> ~/.terraform.d/credentials.tfrc.json
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
