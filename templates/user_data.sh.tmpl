@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "📦 Bootstrapping VM for deployment mode: \${deployment_mode}"
+echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
 
 # Detect package manager and install Python3 and dependencies
 if command -v yum >/dev/null 2>&1; then
@@ -26,13 +26,9 @@ cd /home/ec2-user/scripts
 SCRIPTS_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
 
 echo "⬇️ Downloading scripts from \${SCRIPTS_URL}"
-
-for script in install-django.sh install-wordpress.sh install-clgi.sh; do
-  if ! curl -fLO "\${SCRIPTS_URL}/\${script}"; then
-    echo "❌ Failed to download \${script}. Exiting."
-    exit 1
-  fi
-done
+curl -O "\${SCRIPTS_URL}/install-django.sh"
+curl -O "\${SCRIPTS_URL}/install-wordpress.sh"
+curl -O "\${SCRIPTS_URL}/install-clgi.sh"
 
 # Ensure scripts use Unix-style line endings
 dos2unix install-*.sh
@@ -40,7 +36,7 @@ dos2unix install-*.sh
 chmod +x install-*.sh
 
 # Run the installer based on deployment mode
-if [ "\${deployment_mode}" = "sandbox" ]; then
+if [ "${deployment_mode}" = "sandbox" ]; then
   echo "⚙️ Installing Django stack..."
   ./install-django.sh
 else
@@ -50,8 +46,8 @@ fi
 
 # Optionally clone CLGI.org HTML
 %{ if setup_demo_clone != "none" }
-echo "🌐 Cloning demo content from: \${clone_target_url} with mode: \${setup_demo_clone}"
-./install-clgi.sh "\${setup_demo_clone}"
+echo "🌐 Cloning demo content from: ${clone_target_url} with mode: ${setup_demo_clone}"
+./install-clgi.sh ${setup_demo_clone}
 %{ endif }
 
 echo "✅ Provisioning complete."
