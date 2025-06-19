@@ -3,21 +3,42 @@ set -e
 
 echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
 
-# Detect package manager and install Python3 and dependencies
+# Detect package manager and install Python3, pip, curl, dos2unix if missing
 if command -v yum >/dev/null 2>&1; then
   echo "Using yum package manager"
   yum update -y
   yum install -y python3 python3-pip curl dos2unix
 elif command -v apt-get >/dev/null 2>&1; then
   echo "Using apt-get package manager"
-  apt-get update
+  apt-get update -y
   apt-get install -y python3 python3-pip curl dos2unix
 else
   echo "Unsupported package manager. Exiting."
   exit 1
 fi
 
-pip3 install requests beautifulsoup4
+# Verify curl is installed (just in case)
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl not found, installing..."
+  if command -v yum >/dev/null 2>&1; then
+    yum install -y curl
+  elif command -v apt-get >/dev/null 2>&1; then
+    apt-get install -y curl
+  fi
+fi
+
+# Verify dos2unix is installed (just in case)
+if ! command -v dos2unix >/dev/null 2>&1; then
+  echo "dos2unix not found, installing..."
+  if command -v yum >/dev/null 2>&1; then
+    yum install -y dos2unix
+  elif command -v apt-get >/dev/null 2>&1; then
+    apt-get install -y dos2unix
+  fi
+fi
+
+# Install required Python packages
+pip3 install --no-cache-dir requests beautifulsoup4
 
 mkdir -p /home/ec2-user/scripts
 cd /home/ec2-user/scripts
@@ -25,12 +46,16 @@ cd /home/ec2-user/scripts
 # Download provisioning scripts from GitHub
 SCRIPTS_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
 
-echo "⬇️ Downloading scripts from $SCRIPTS_URL"
-curl -O "$SCRIPTS_URL/install-django.sh"
-curl -O "$SCRIPTS_URL/install-wordpress.sh"
-curl -O "$SCRIPTS_URL/install-clgi.sh"
+echo "⬇️ Downloading scripts from ${SCRIPTS_URL}"
 
-# Ensure scripts use Unix-style line endings
+for script in install-django.sh install-wordpress.sh install-clgi.sh; do
+  if ! curl -fLO "${SCRIPTS_URL}/${script}"; then
+    echo "Failed to download ${script}, exiting."
+    exit 1
+  fi
+done
+
+# Convert scripts to Unix-style line endings
 dos2unix install-*.sh
 
 chmod +x install-*.sh
@@ -44,10 +69,10 @@ else
   ./install-wordpress.sh
 fi
 
-# Optionally clone CLGI.org HTML
+# Optionally clone CLGI.org HTML if setup_demo_clone is not "none"
 %{ if setup_demo_clone != "none" }
 echo "🌐 Cloning demo content from: ${clone_target_url} with mode: ${setup_demo_clone}"
-./install-clgi.sh ${setup_demo_clone}
+./install-clgi.sh "${setup_demo_clone}"
 %{ endif }
 
 echo "✅ Provisioning complete."
