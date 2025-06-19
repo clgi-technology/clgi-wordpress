@@ -7,3 +7,4 @@ setup_demo_clone       = false
 clone_target_url       = "https://www.clgi.org"
 auto_delete_after_24h  = true
 scripts_url            = "https://raw.githubusercontent.com/your-org/your-repo/main/scripts/"
+instance_password      = "P@ssw0rd123456!"
