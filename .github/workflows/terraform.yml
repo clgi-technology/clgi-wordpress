@@ -76,7 +76,6 @@ jobs:
       - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
-
           jq -n \
             --arg cloud_provider "${{ inputs.cloud_provider }}" \
             --arg deployment_mode "${{ inputs.deployment_mode }}" \
@@ -152,19 +151,14 @@ jobs:
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
-      - name: Terraform Refresh
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} refresh
+      - name: Terraform Refresh (via apply -refresh-only)
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -refresh-only -auto-approve
 
       - name: Terraform Validate
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
-
-      # Optional taint step commented out
-      # - name: Taint AWS Instance (example)
-      #   if: ${{ inputs.cloud_provider == 'aws' }}
-      #   run: terraform -chdir=deployments/aws taint aws_instance.clgi_vm || true
 
       - name: Terraform Apply
         id: apply
