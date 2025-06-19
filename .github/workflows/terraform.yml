@@ -158,34 +158,34 @@ jobs:
           cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
           terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
-      - name: Terraform Apply with retry logic
+      - name: Terraform Apply with retry and state recovery
+        id: apply
         run: |
           set -e
-
-          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          cd deployments/${{ inputs.cloud_provider }}
 
           # Try initial terraform apply
-          if terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s; then
+          if terraform apply -auto-approve -lock-timeout=60s; then
             echo "Terraform apply succeeded."
           else
             echo "Terraform apply failed. Waiting 30 seconds before retrying..."
             sleep 30
 
-            if terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s; then
+            if terraform apply -auto-approve -lock-timeout=60s; then
               echo "Terraform apply succeeded on retry."
             else
               echo "Retry failed. Checking for errored.tfstate..."
 
-              if [ -f deployments/${{ inputs.cloud_provider }}/errored.tfstate ]; then
-                terraform -chdir=deployments/${{ inputs.cloud_provider }} state push deployments/${{ inputs.cloud_provider }}/errored.tfstate || {
+              if [ -f errored.tfstate ]; then
+                terraform state push errored.tfstate || {
                   echo "Failed to push errored.tfstate."
                   exit 1
                 }
                 echo "Pushed errored.tfstate successfully."
 
                 echo "Refreshing state and trying apply again..."
-                terraform -chdir=deployments/${{ inputs.cloud_provider }} refresh
-                terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
+                terraform refresh
+                terraform apply -auto-approve -lock-timeout=60s
               else
                 echo "No errored.tfstate found. Exiting with failure."
                 exit 1
