@@ -29,17 +29,17 @@ jobs:
         run: |
           mkdir -p ~/.terraform.d
           cat > ~/.terraform.d/credentials.tfrc.json <<EOF
-          {
-            "credentials": {
-              "app.terraform.io": {
-                "token": "${{ secrets.TFE_TOKEN }}"
-              }
-            }
-          }
-          EOF
+{
+  "credentials": {
+    "app.terraform.io": {
+      "token": "${{ secrets.TFE_TOKEN }}"
+    }
+  }
+}
+EOF
 
       - name: Terraform Init (with Cloud Backend)
-        run: terraform -chdir=deployments/aws init
+        run: terraform -chdir=deployments/aws init -input=false
 
       - name: Terraform Destroy (auto approve)
-        run: terraform -chdir=deployments/aws destroy -auto-approve
+        run: terraform -chdir=deployments/aws destroy -auto-approve -input=false
