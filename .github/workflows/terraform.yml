@@ -43,8 +43,7 @@ jobs:
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
       TF_VAR_vm_name: "clgi-vm"
       TF_VAR_vm_size: "t3.medium"
-      
-      # Secrets and tokens
+
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -125,6 +124,9 @@ jobs:
         if: ${{ inputs.cloud_provider == 'aws' || inputs.cloud_provider == 'azure' || inputs.cloud_provider == 'gcp' }}
         run: |
           if [[ "${{ inputs.cloud_provider }}" == "aws" ]]; then
+            export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            export AWS_SESSION_TOKEN="${{ secrets.AWS_SESSION_TOKEN }}"
             aws sts get-caller-identity || (echo "❌ Invalid AWS credentials" && exit 1)
           elif [[ "${{ inputs.cloud_provider }}" == "azure" ]]; then
             az account show || (echo "❌ Invalid Azure credentials" && exit 1)
@@ -134,7 +136,6 @@ jobs:
             gcloud auth list || (echo "❌ Invalid GCP credentials" && exit 1)
           fi
 
-      # Copy all needed folders before any terraform command
       - name: Copy Modules, Templates, and Scripts
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules
@@ -148,14 +149,19 @@ jobs:
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
       - name: Terraform Validate
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
+        run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
       - name: Terraform Plan
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
+        run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
       - name: Terraform Apply (with refresh)
         id: apply
         run: |
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
           terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -refresh-only -lock-timeout=60s
           terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
         continue-on-error: true
