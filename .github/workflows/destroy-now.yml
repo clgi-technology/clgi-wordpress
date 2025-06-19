@@ -50,18 +50,5 @@ jobs:
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
       - name: Terraform Destroy (auto approve)
-        run: |
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} destroy -auto-approve \
-            -var "ssh_password=${{ secrets.SSH_PASSWORD }}" \
-            -var "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-            -var "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-            -var "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" \
-            -var "ssh_public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
-            -var "ssh_private_key=${{ secrets.SSH_PRIVATE_KEY }}" \
-            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "gcp_credentials=${{ secrets.GCP_CREDENTIALS_JSON }}" \
-            -var "azure_client_id=${{ secrets.AZURE_CLIENT_ID }}" \
-            -var "azure_client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
-            -var "azure_subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-            -var "azure_tenant_id=${{ secrets.AZURE_TENANT_ID }}"
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} destroy -auto-approve
 
