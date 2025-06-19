@@ -2,11 +2,6 @@ output "vpc_id" {
   value = aws_vpc.main[0].id
 }
 
-output "vm_ip" {
-  description = "Public IP address of the AWS EC2 instance"
-  value       = length(aws_instance.vm) > 0 ? aws_instance.vm[0].public_ip : null
-}
-
 output "instance_id" {
   description = "AWS EC2 instance ID"
   value       = aws_instance.vm[0].id
