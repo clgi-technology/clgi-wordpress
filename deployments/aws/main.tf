@@ -14,20 +14,6 @@ resource "aws_key_pair" "generated_key" {
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
-output "ssh_private_key" {
-  value     = tls_private_key.ssh_key.private_key_pem
-  sensitive = true
-}
-
-output "ssh_public_key" {
-  value = tls_private_key.ssh_key.public_key_openssh
-}
-
-output "ssh_key_pair_name" {
-  description = "Dynamically generated AWS key pair name"
-  value       = aws_key_pair.generated_key.key_name
-}
-
 # User Data Script
 data "template_file" "user_data" {
   template = file("${path.module}/templates/user_data.sh.tmpl")
@@ -66,4 +52,18 @@ module "app" {
 
   security_group_id     = module.security_group.security_group_id
   ssh_public_key        = tls_private_key.ssh_key.public_key_openssh
+}
+
+output "ssh_private_key" {
+  value     = tls_private_key.ssh_key.private_key_pem
+  sensitive = true
+}
+
+output "ssh_public_key" {
+  value = tls_private_key.ssh_key.public_key_openssh
+}
+
+output "ssh_key_pair_name" {
+  description = "Dynamically generated AWS key pair name"
+  value       = aws_key_pair.generated_key.key_name
 }
