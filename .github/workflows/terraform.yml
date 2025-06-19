@@ -158,21 +158,39 @@ jobs:
           cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
           terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
-      - name: Terraform Apply (with refresh)
-        id: apply
+      - name: Terraform Apply with retry logic
         run: |
-          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -refresh-only -lock-timeout=60s
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
-        continue-on-error: true
+          set -e
 
-      - name: Recover Terraform State (if apply failed)
-        if: failure() && steps.apply.outcome == 'failure'
-        run: |
-          if [ -f deployments/${{ inputs.cloud_provider }}/errored.tfstate ]; then
-            terraform -chdir=deployments/${{ inputs.cloud_provider }} state push deployments/${{ inputs.cloud_provider }}/errored.tfstate
+          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+
+          # Try initial terraform apply
+          if terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s; then
+            echo "Terraform apply succeeded."
           else
-            echo "No errored.tfstate found."
+            echo "Terraform apply failed. Waiting 30 seconds before retrying..."
+            sleep 30
+
+            if terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s; then
+              echo "Terraform apply succeeded on retry."
+            else
+              echo "Retry failed. Checking for errored.tfstate..."
+
+              if [ -f deployments/${{ inputs.cloud_provider }}/errored.tfstate ]; then
+                terraform -chdir=deployments/${{ inputs.cloud_provider }} state push deployments/${{ inputs.cloud_provider }}/errored.tfstate || {
+                  echo "Failed to push errored.tfstate."
+                  exit 1
+                }
+                echo "Pushed errored.tfstate successfully."
+
+                echo "Refreshing state and trying apply again..."
+                terraform -chdir=deployments/${{ inputs.cloud_provider }} refresh
+                terraform -chdir=deployments/${{ inputs.cloud_provider }} apply -auto-approve -lock-timeout=60s
+              else
+                echo "No errored.tfstate found. Exiting with failure."
+                exit 1
+              fi
+            fi
           fi
 
       - name: Capture SSH Key for User
