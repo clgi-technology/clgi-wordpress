@@ -152,3 +152,8 @@ variable "region" {
   description = "Generic region variable alias (optional fallback)"
   default     = ""
 }
+variable "SCRIPTS_URL" {
+  description = "URL for scripts used in user data"
+  type        = string
+}
+
