@@ -45,19 +45,18 @@ jobs:
         run: |
           mkdir -p ~/.terraform.d
           cat > ~/.terraform.d/credentials.tfrc.json <<EOF
-          {
-            "credentials": {
-              "app.terraform.io": {
-                "token": "${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"
-              }
-            }
-          }
-          EOF
+{
+  "credentials": {
+    "app.terraform.io": {
+      "token": "${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"
+    }
+  }
+}
+EOF
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
 
-      # -- Select Workspace if using one --
       - name: Select Terraform Workspace
         run: |
           terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace select test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace new test-workspace
