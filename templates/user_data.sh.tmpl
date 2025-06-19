@@ -1,4 +1,13 @@
 #!/bin/bash
+
+# Enable SSH password login and set ec2-user password
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+sed -i 's/^#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+
+echo "ec2-user:${ssh_password}" | chpasswd
+
+systemctl restart sshd
+
 set -euo pipefail
 exec > /var/log/user_data.log 2>&1
 
