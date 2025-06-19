@@ -1,109 +1,88 @@
 #!/bin/bash
 set -euxo pipefail
-
-LOG_FILE="/var/log/clgi-provisioning.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+export DEBIAN_FRONTEND=noninteractive
 
 echo "📦 Bootstrapping VM for deployment mode: ${deployment_mode}"
 
-# Detect package manager and install system packages
+# Wait for package manager lock (up to 5 minutes)
+for i in $(seq 1 30); do
+  if ! lsof /var/run/yum.pid >/dev/null 2>&1 && ! lsof /var/run/dpkg.lock >/dev/null 2>&1; then
+    break
+  fi
+  echo "⏳ Waiting for package manager lock..."
+  sleep 10
+done
+
+# Install dependencies
 if command -v yum >/dev/null 2>&1; then
   echo "Using yum package manager"
   yum update -y
   yum install -y python3 python3-pip curl dos2unix
 elif command -v apt-get >/dev/null 2>&1; then
   echo "Using apt-get package manager"
-  apt-get update
+  apt-get update -y
   apt-get install -y python3 python3-pip curl dos2unix
 else
   echo "❌ Unsupported package manager. Exiting."
   exit 1
 fi
 
-# Upgrade pip and install Python dependencies
-pip3 install --upgrade pip
-pip3 install requests beautifulsoup4
+pip3 install --user requests beautifulsoup4
 
-# Create working directory
 mkdir -p /home/ec2-user/scripts
 cd /home/ec2-user/scripts
 
-# Write install-django.sh inline for reliability
-cat > install-django.sh <<'EOF'
-#!/bin/bash
-set -euxo pipefail
+# Define script URLs
+SCRIPTS_URL="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
 
-echo "📦 Installing Django"
-
-# Install development tools
-if command -v yum >/dev/null 2>&1; then
-  yum install -y gcc python3-devel
-elif command -v apt-get >/dev/null 2>&1; then
-  apt-get install -y build-essential python3-dev
-fi
-
-# Create virtual environment
-cd /opt
-python3 -m venv django_env
-source django_env/bin/activate
-
-# Install Django
-pip install --upgrade pip
-pip install django gunicorn
-
-# Start a Django project
-django-admin startproject mysite
-cd mysite
-
-# Run migrations
-python manage.py migrate
-
-# Start dev server (in background)
-nohup python manage.py runserver 0.0.0.0:8000 &
-
-echo "✅ Django installed at /opt/mysite"
-EOF
-
-chmod +x install-django.sh
-
-# Download other scripts from GitHub (with fallback logic)
-scripts_url="https://raw.githubusercontent.com/clgi-technology/clgi-wordpress/main/scripts"
-download_script() {
-  local script_name=$1
-  if curl --fail -sO "${scripts_url}/${script_name}"; then
-    echo "✅ Downloaded ${script_name}"
-    dos2unix "${script_name}"
-    chmod +x "${script_name}"
-  else
-    echo "⚠️ Failed to download ${script_name}, skipping."
+# Download or fall back to embedded scripts
+download_or_fallback() {
+  local script_name="$1"
+  local fallback_content="$2"
+  if ! curl --retry 5 --retry-delay 5 -fSL "${SCRIPTS_URL}/${script_name}" -o "${script_name}"; then
+    echo "⚠️ Failed to download ${script_name}, using fallback"
+    echo "${fallback_content}" > "${script_name}"
   fi
+  dos2unix "${script_name}" || true
+  chmod +x "${script_name}"
 }
 
-download_script install-wordpress.sh
-download_script install-clgi.sh
+# Fallback install-django.sh
+fallback_django='#!/bin/bash
+echo "⚠️ Running fallback Django installer"
+pip3 install --user django gunicorn
+'
 
-# Run the appropriate installer
-if [[ "${deployment_mode}" == "sandbox" ]]; then
+# Fallback install-wordpress.sh
+fallback_wordpress='#!/bin/bash
+echo "⚠️ Running fallback WordPress installer"
+yum install -y httpd php php-mysqlnd mariadb-server -y || apt-get install -y apache2 php libapache2-mod-php mariadb-server
+'
+
+# Fallback install-clgi.sh
+fallback_clgi='#!/bin/bash
+MODE=$1
+echo "⚠️ Running fallback CLGI demo clone (mode=$MODE)"
+echo "<html><body><h1>CLGI Demo - Mode: $MODE</h1></body></html>" > /var/www/html/index.html
+'
+
+download_or_fallback install-django.sh "$fallback_django"
+download_or_fallback install-wordpress.sh "$fallback_wordpress"
+download_or_fallback install-clgi.sh "$fallback_clgi"
+
+# Run stack installer
+if [ "${deployment_mode}" = "sandbox" ]; then
   echo "⚙️ Installing Django stack..."
-  ./install-django.sh
+  ./install-django.sh || { echo "❌ Django install failed"; exit 1; }
 else
   echo "⚙️ Installing WordPress stack..."
-  if [[ -f install-wordpress.sh ]]; then
-    ./install-wordpress.sh
-  else
-    echo "❌ install-wordpress.sh not available. Aborting."
-    exit 1
-  fi
+  ./install-wordpress.sh || { echo "❌ WordPress install failed"; exit 1; }
 fi
 
-# Optionally run content setup
-%{ if setup_demo_clone != "none" }
-echo "🌐 Cloning demo content: ${setup_demo_clone} from ${clone_target_url}"
-if [[ -f install-clgi.sh ]]; then
-  ./install-clgi.sh "${setup_demo_clone}"
-else
-  echo "❌ install-clgi.sh not available. Skipping clone."
+# Clone optional demo content
+if [ "${setup_demo_clone}" != "none" ]; then
+  echo "🌐 Cloning demo content from ${clone_target_url}, mode ${setup_demo_clone}"
+  ./install-clgi.sh "${setup_demo_clone}" || echo "⚠️ install-clgi.sh failed, continuing"
 fi
-%{ endif }
 
 echo "✅ Provisioning complete."
