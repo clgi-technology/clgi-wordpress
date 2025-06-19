@@ -1,45 +1,66 @@
-name: Terraform Destroy Now
+name: Terraform Destroy Deployment
 
 on:
   workflow_dispatch:
+    inputs:
+      cloud_provider:
+        description: "Cloud provider (aws, gcp, azure)"
+        required: true
+        type: choice
+        options: [aws, gcp, azure]
 
 jobs:
-  destroy_now:
+  destroy:
     runs-on: ubuntu-latest
 
     env:
-      TF_VAR_aws_region: "us-west-2"
+      TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
 
-      # Terraform Cloud API token
-      TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-
-      # AWS credentials for Terraform provider
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      TF_VAR_ssh_password: ${{ secrets.SSH_PASSWORD }}
+      TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_gcp_credentials: ${{ secrets.GCP_CREDENTIALS_JSON }}
+      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VAR_azure_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Manually Install Terraform
+        run: |
+          curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
+          unzip terraform.zip
+          sudo mv terraform /usr/local/bin/
+          terraform -version
 
       - name: Authenticate Terraform CLI with Terraform Cloud
         run: |
           mkdir -p ~/.terraform.d
           cat > ~/.terraform.d/credentials.tfrc.json <<EOF
-{
-  "credentials": {
-    "app.terraform.io": {
-      "token": "${{ secrets.TFE_TOKEN }}"
-    }
-  }
-}
-EOF
+          {
+            "credentials": {
+              "app.terraform.io": {
+                "token": "${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}"
+              }
+            }
+          }
+          EOF
 
-      - name: Terraform Init (with Cloud Backend)
-        run: terraform -chdir=deployments/aws init -input=false
+      - name: Terraform Init
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
+
+      # -- Select Workspace if using one --
+      - name: Select Terraform Workspace
+        run: |
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace select test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace new test-workspace
 
       - name: Terraform Destroy (auto approve)
-        run: terraform -chdir=deployments/aws destroy -auto-approve -input=false
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} destroy -auto-approve
