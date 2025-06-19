@@ -1,4 +1,4 @@
-output "vm_ip" {
+output "vm_public_ip" {
   description = "Public IP address of the AWS instance"
   value       = module.app.public_ip
 }
