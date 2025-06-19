@@ -149,15 +149,15 @@ jobs:
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules deployments/${{ inputs.cloud_provider }}/templates deployments/${{ inputs.cloud_provider }}/scripts
           cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
 
-      # -- ADDED STEP: Select or create a workspace to isolate state per run --
+      # -- FIXED: Terraform Init BEFORE workspace selection --
+      - name: Terraform Init
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
+
       - name: Select or Create Terraform Workspace
         run: |
           terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace list | grep test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace new test-workspace || terraform -chdir=deployments/${{ inputs.cloud_provider }} workspace select test-workspace
 
-      - name: Terraform Init
-        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init
-
-      # -- ADDED STEP: Refresh state before planning --
+      # -- ADDED: Refresh state before plan --
       - name: Terraform Refresh
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} refresh
 
@@ -167,7 +167,7 @@ jobs:
       - name: Terraform Plan
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
-      # -- OPTIONAL: You can add a taint step here if needed, commented out --
+      # Optional taint step commented out
       # - name: Taint AWS Instance (example)
       #   if: ${{ inputs.cloud_provider == 'aws' }}
       #   run: terraform -chdir=deployments/aws taint aws_instance.clgi_vm || true
