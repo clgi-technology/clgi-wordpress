@@ -1,12 +1,15 @@
+#!/usr/bin/env python3
 import os
 import requests
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
+import sys
 
 def download_file(url, save_folder):
     os.makedirs(save_folder, exist_ok=True)
     local_filename = os.path.join(save_folder, os.path.basename(urlparse(url).path))
-    if not local_filename.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico')):
+    # Add extension if missing and not static resource
+    if not local_filename.lower().endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico')):
         local_filename += '.file'
     try:
         r = requests.get(url, timeout=10)
@@ -27,9 +30,10 @@ def rewrite_urls(soup, tag, attr, base_url, static_dir):
         full_url = urljoin(base_url, url)
         local_path = download_file(full_url, static_dir)
         if local_path:
+            # Use relative path for href/src
             element[attr] = os.path.relpath(local_path, static_dir)
 
-def clone_website(base_url, mode='full', output_dir='/home/ubuntu/sandbox'):
+def clone_website(base_url, mode='full', output_dir='/home/ec2-user/sandbox'):
     os.makedirs(output_dir, exist_ok=True)
     static_dir = os.path.join(output_dir, 'static')
     os.makedirs(static_dir, exist_ok=True)
@@ -39,15 +43,15 @@ def clone_website(base_url, mode='full', output_dir='/home/ubuntu/sandbox'):
     r.raise_for_status()
     soup = BeautifulSoup(r.text, 'html.parser')
 
-    # Always rewrite CSS
+    # Always rewrite CSS links
     rewrite_urls(soup, 'link', 'href', base_url, static_dir)
 
     if mode == 'full':
         rewrite_urls(soup, 'script', 'src', base_url, static_dir)
         rewrite_urls(soup, 'img', 'src', base_url, static_dir)
-        rewrite_urls(soup, 'link', 'href', base_url, static_dir)  # Favicon
+        rewrite_urls(soup, 'link', 'href', base_url, static_dir)  # favicon etc.
 
-    # Save modified HTML
+    # Save modified HTML to index.html in static folder
     index_file = os.path.join(static_dir, 'index.html')
     with open(index_file, 'w', encoding='utf-8') as f:
         f.write(soup.prettify())
@@ -55,11 +59,10 @@ def clone_website(base_url, mode='full', output_dir='/home/ubuntu/sandbox'):
     print(f"Website cloned in {mode} mode to {output_dir}")
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) < 2:
         print("Usage: python clone_clgi.py <URL> [basic|full]")
         sys.exit(1)
-    
+
     base_url = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else 'full'
 
