@@ -66,7 +66,7 @@ Certainly! Here are sample screenshots illustrating the steps in the **Quick Sta
   ```
 ---
 
-### 2. Prepare Cloud Credentials and Add Them as Terraform [**Secrets**](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables) and Github [**Secrets**]([https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions))
+### 2. Prepare Cloud Credentials and Add Them as Terraform [**Secrets**](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables) and Github [**Secrets**]([https://developer.hashicorp.com/terraform/cloud-docs/workspaces/variables/managing-variables](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)) For a more automated option use the update-secrets.yml workflow file.
 
 
 
@@ -161,6 +161,7 @@ From GitHub Artifacts: Users can download private_key.pem from the Actions run.
 │   ├── install-wordpress.sh
 │   └── install-clgi.sh
 ├── .github/workflows/
+│   ├── update-secrets.yml    # GitHub Actions workflow for updating Github secrets and Terraform variables
 │   ├── terraform-apply-only.yml    # GitHub Actions workflow for running terraform apply command only
 │   ├── terraform-auto-destroy.yml  # GitHub Actions workflow for destroying previous deployment
 │   └── terraform.yml               # GitHub Actions workflow for deployment 
