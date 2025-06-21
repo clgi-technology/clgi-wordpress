@@ -35,7 +35,7 @@ elif [ "$pkg_mgr" = "apt-get" ]; then
 fi
 
 pip3 install --upgrade pip
-pip3 install requests beautifulsoup4
+pip3 install 'urllib3<2.0' 'requests<2.31' beautifulsoup4
 
 WEBROOT="/var/www/html/clgi-demo"
 mkdir -p "$WEBROOT"
