@@ -11,40 +11,43 @@ systemctl restart sshd
 set -euo pipefail
 exec > /var/log/user_data.log 2>&1
 
-echo "📦 Bootstrapping VM to scrape website with Python scraper"
+echo "📦 Bootstrapping VM"
 
-# Detect package manager and install dependencies
-if command -v yum >/dev/null 2>&1; then
-  pkg_mgr="yum"
-elif command -v apt-get >/dev/null 2>&1; then
-  pkg_mgr="apt-get"
-else
-  echo "Unsupported package manager. Exiting."
-  exit 1
-fi
+if [ "${setup_demo_clone}" = "true" ]; then
+  echo "Setup demo clone enabled, running scraper..."
 
-echo "Installing dependencies with $pkg_mgr"
-if [ "$pkg_mgr" = "yum" ]; then
-  yum update -y
-  yum install -y python3 python3-pip httpd git
-  systemctl enable httpd
-elif [ "$pkg_mgr" = "apt-get" ]; then
-  apt-get update
-  apt-get install -y python3 python3-pip apache2 git
-  systemctl enable apache2
-fi
+  # Detect package manager and install dependencies
+  if command -v yum >/dev/null 2>&1; then
+    pkg_mgr="yum"
+  elif command -v apt-get >/dev/null 2>&1; then
+    pkg_mgr="apt-get"
+  else
+    echo "Unsupported package manager. Exiting."
+    exit 1
+  fi
 
-pip3 install --upgrade pip
-pip3 install 'urllib3<2.0' 'requests<2.31' beautifulsoup4
+  echo "Installing dependencies with $pkg_mgr"
+  if [ "$pkg_mgr" = "yum" ]; then
+    yum update -y
+    yum install -y python3 python3-pip httpd git
+    systemctl enable httpd
+  elif [ "$pkg_mgr" = "apt-get" ]; then
+    apt-get update
+    apt-get install -y python3 python3-pip apache2 git
+    systemctl enable apache2
+  fi
 
-WEBROOT="/var/www/html/scrape-demo"
-mkdir -p "$WEBROOT"
-chown -R ec2-user:ec2-user "$WEBROOT"
+  pip3 install --upgrade pip
+  pip3 install 'urllib3<2.0' 'requests<2.31' beautifulsoup4
 
-SCRAPER_PATH="/home/ec2-user/scrape_clgi.py"
+  WEBROOT="/var/www/html/scrape-demo"
+  mkdir -p "$WEBROOT"
+  chown -R ec2-user:ec2-user "$WEBROOT"
 
-echo "Writing Python scraper script to $SCRAPER_PATH"
-cat > "$SCRAPER_PATH" <<'EOF'
+  SCRAPER_PATH="/home/ec2-user/scrape_deploy_key.py"
+
+  echo "Writing Python scraper script to $SCRAPER_PATH"
+  cat > "$SCRAPER_PATH" <<'EOF'
 #!/usr/bin/env python3
 import os
 import requests
@@ -54,7 +57,6 @@ from urllib.parse import urljoin, urlparse
 BASE_URL = os.environ.get("SCRAPE_URL", "https://example.com")
 OUTPUT_DIR = "/var/www/html/scrape-demo"
 
-# Define headers with a realistic User-Agent
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
 }
@@ -122,14 +124,7 @@ def scrape_page(url, visited):
             rel_path = os.path.relpath(asset_local_path, os.path.dirname(local_path))
             element[attr] = rel_path.replace('\\', '/')
 
-    # Save updated HTML with local asset links
     save_file(local_path, soup.prettify('utf-8'))
-
-    # 🔒 Removed link-following to limit scrape to homepage only
-    # for a in soup.find_all('a', href=True):
-    #     link = urljoin(url, a['href'])
-    #     if link.startswith(BASE_URL):
-    #         scrape_page(link, visited)
 
 def main():
     print(f"Starting scrape of {BASE_URL} into {OUTPUT_DIR}")
@@ -140,19 +135,23 @@ if __name__ == '__main__':
     main()
 EOF
 
-chmod +x "$SCRAPER_PATH"
+  chmod +x "$SCRAPER_PATH"
 
-echo "Running Python scraper..."
-export SCRAPE_URL="${clone_target_url}"
-python3 "$SCRAPER_PATH"
+  echo "Running Python scraper..."
+  export SCRAPE_URL="${clone_target_url}"
+  python3 "$SCRAPER_PATH"
 
-echo "Setting permissions for web server"
-if [ "$pkg_mgr" = "yum" ]; then
-  chown -R apache:apache "$WEBROOT"
-  systemctl restart httpd
-elif [ "$pkg_mgr" = "apt-get" ]; then
-  chown -R www-data:www-data "$WEBROOT"
-  systemctl restart apache2
+  echo "Setting permissions for web server"
+  if [ "$pkg_mgr" = "yum" ]; then
+    chown -R apache:apache "$WEBROOT"
+    systemctl restart httpd
+  elif [ "$pkg_mgr" = "apt-get" ]; then
+    chown -R www-data:www-data "$WEBROOT"
+    systemctl restart apache2
+  fi
+
+  echo "✅ Scraping and deployment complete. Website available at VM_IP/scrape-demo"
+
+else
+  echo "Setup demo clone disabled. Skipping scraper."
 fi
-
-echo "✅ Scraping and deployment complete. Website available at VM_IP/scrape-demo"
