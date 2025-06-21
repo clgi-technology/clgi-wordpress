@@ -10,7 +10,7 @@ resource "tls_private_key" "ssh_key" {
 }
 
 resource "aws_key_pair" "generated_key" {
-  key_name   = "${var.vm_name}-${random_id.key_suffix.hex}"
+  key_name   = "deploy-key-${random_id.key_suffix.hex}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -23,7 +23,7 @@ data "template_file" "user_data" {
     setup_demo_clone = var.setup_demo_clone ? "true" : "false"
     clone_target_url = var.clone_target_url
     scripts_url      = var.scripts_url
-    ssh_password     = var.ssh_password           # <-- Add this line
+    ssh_password     = var.ssh_password
   }
 }
 
@@ -57,16 +57,18 @@ module "app" {
   ssh_public_key        = tls_private_key.ssh_key.public_key_openssh
 }
 
-output "ssh_private_key" {
-  value     = tls_private_key.ssh_key.private_key_pem
-  sensitive = true
+output "deploy_key_private" {
+  description = "Private SSH key for the deployed VM"
+  value       = tls_private_key.ssh_key.private_key_pem
+  sensitive   = true
 }
 
-output "ssh_public_key" {
-  value = tls_private_key.ssh_key.public_key_openssh
+output "deploy_key_public" {
+  description = "Public SSH key for the deployed VM"
+  value       = tls_private_key.ssh_key.public_key_openssh
 }
 
-output "ssh_key_pair_name" {
-  description = "Dynamically generated AWS key pair name"
+output "deploy_key_pair_name" {
+  description = "Name of the generated AWS key pair"
   value       = aws_key_pair.generated_key.key_name
 }
