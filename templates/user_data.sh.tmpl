@@ -54,6 +54,11 @@ from urllib.parse import urljoin, urlparse
 BASE_URL = "https://www.clgi.org/"
 OUTPUT_DIR = "/var/www/html/clgi-demo"
 
+# Define headers with a realistic User-Agent
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
+}
+
 def save_file(path, content, mode='wb'):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, mode) as f:
@@ -79,7 +84,7 @@ def scrape_page(url, visited):
 
     print(f"Scraping {url}")
     try:
-        resp = requests.get(url)
+        resp = requests.get(url, headers=HEADERS)
         resp.raise_for_status()
     except Exception as e:
         print(f"Failed to fetch {url}: {e}")
@@ -108,7 +113,7 @@ def scrape_page(url, visited):
             asset_local_path = get_local_path(full_url)
             if not os.path.exists(asset_local_path):
                 try:
-                    r = requests.get(full_url)
+                    r = requests.get(full_url, headers=HEADERS)
                     r.raise_for_status()
                     save_file(asset_local_path, r.content)
                 except Exception as e:
@@ -117,12 +122,14 @@ def scrape_page(url, visited):
             rel_path = os.path.relpath(asset_local_path, os.path.dirname(local_path))
             element[attr] = rel_path.replace('\\', '/')
 
+    # Save updated HTML with local asset links
     save_file(local_path, soup.prettify('utf-8'))
 
-    for a in soup.find_all('a', href=True):
-        link = urljoin(url, a['href'])
-        if link.startswith(BASE_URL):
-            scrape_page(link, visited)
+    # 🔒 Removed link-following to limit scrape to homepage only
+    # for a in soup.find_all('a', href=True):
+    #     link = urljoin(url, a['href'])
+    #     if link.startswith(BASE_URL):
+    #         scrape_page(link, visited)
 
 def main():
     print(f"Starting scrape of {BASE_URL} into {OUTPUT_DIR}")
@@ -131,6 +138,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 EOF
 
 chmod +x "$SCRAPER_PATH"
