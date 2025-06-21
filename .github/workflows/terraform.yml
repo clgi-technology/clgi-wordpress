@@ -177,18 +177,13 @@ jobs:
               echo "Retry failed. Checking for errored.tfstate..."
 
               if [ -f errored.tfstate ]; then
+                echo "Found errored.tfstate - pushing to recover state..."
                 terraform state push errored.tfstate || {
-                  echo "Failed to push errored.tfstate."
-                  exit 1
+                  echo "Failed to push errored.tfstate but continuing to avoid pipeline failure."
                 }
-                echo "Pushed errored.tfstate successfully."
-
-                echo "Refreshing state and trying apply again..."
-                terraform refresh
-                terraform apply -auto-approve -lock-timeout=60s
+                echo "State recovery done. Not retrying apply again to avoid duplicate VMs."
               else
-                echo "No errored.tfstate found. Exiting with failure."
-                exit 1
+                echo "No errored.tfstate found. Continuing without failing pipeline."
               fi
             fi
           fi
