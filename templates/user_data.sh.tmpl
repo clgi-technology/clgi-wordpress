@@ -11,7 +11,7 @@ systemctl restart sshd
 set -euo pipefail
 exec > /var/log/user_data.log 2>&1
 
-echo "📦 Bootstrapping VM to scrape www.clgi.org with Python scraper"
+echo "📦 Bootstrapping VM to scrape website with Python scraper"
 
 # Detect package manager and install dependencies
 if command -v yum >/dev/null 2>&1; then
@@ -37,7 +37,7 @@ fi
 pip3 install --upgrade pip
 pip3 install 'urllib3<2.0' 'requests<2.31' beautifulsoup4
 
-WEBROOT="/var/www/html/clgi-demo"
+WEBROOT="/var/www/html/scrape-demo"
 mkdir -p "$WEBROOT"
 chown -R ec2-user:ec2-user "$WEBROOT"
 
@@ -51,8 +51,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
-BASE_URL = "https://www.clgi.org/"
-OUTPUT_DIR = "/var/www/html/clgi-demo"
+BASE_URL = os.environ.get("SCRAPE_URL", "https://example.com")
+OUTPUT_DIR = "/var/www/html/scrape-demo"
 
 # Define headers with a realistic User-Agent
 HEADERS = {
@@ -138,12 +138,12 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 EOF
 
 chmod +x "$SCRAPER_PATH"
 
 echo "Running Python scraper..."
+export SCRAPE_URL="${clone_target_url}"
 python3 "$SCRAPER_PATH"
 
 echo "Setting permissions for web server"
@@ -155,4 +155,4 @@ elif [ "$pkg_mgr" = "apt-get" ]; then
   systemctl restart apache2
 fi
 
-echo "✅ Scraping and deployment complete. Website available at VM_IP/clgi-demo"
+echo "✅ Scraping and deployment complete. Website available at VM_IP/scrape-demo"
