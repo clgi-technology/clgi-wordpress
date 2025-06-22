@@ -31,10 +31,6 @@ on:
         description: "CIDR IP range allowed to SSH"
         required: true
         default: "0.0.0.0/0"
-      vm_config_json:
-        description: "Optional JSON file input to override VM size and type"
-        required: false
-        type: string
 
 jobs:
   deploy:
@@ -68,20 +64,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Upload VM Config JSON Artifact if provided
-        if: ${{ inputs.vm_config_json != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: vm-config-json
-          path: ${{ inputs.vm_config_json }}
-
-      - name: Download VM Config JSON Artifact
-        if: ${{ inputs.vm_config_json != '' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: vm-config-json
-          path: ./vm-config
-
       - name: Manually Install Terraform
         run: |
           curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
@@ -92,18 +74,6 @@ jobs:
       - name: Normalize boolean inputs
         run: |
           echo "AUTO_DELETE=$( [[ '${{ inputs.auto_delete_after_24h }}' == 'true' ]] && echo true || echo false )" >> $GITHUB_ENV
-
-      - name: Set VM size from JSON or default
-        run: |
-          if [ -f ./vm-config/${{ inputs.vm_config_json }} ]; then
-            VM_SIZE=$(jq -r '.vm_size // "t3.medium"' ./vm-config/${{ inputs.vm_config_json }})
-            VM_TYPE=$(jq -r '.vm_type // "linux"' ./vm-config/${{ inputs.vm_config_json }})
-          else
-            VM_SIZE="t3.medium"
-            VM_TYPE="linux"
-          fi
-          echo "VM_SIZE=$VM_SIZE" >> $GITHUB_ENV
-          echo "VM_TYPE=$VM_TYPE" >> $GITHUB_ENV
 
       - name: Generate terraform.auto.tfvars.json
         run: |
@@ -116,8 +86,7 @@ jobs:
             --arg clone_target_url "${{ inputs.clone_target_url }}" \
             --arg ssh_allowed_ip "${{ inputs.ssh_allowed_ip }}" \
             --arg vm_name "deploy-vm" \
-            --arg vm_size "$VM_SIZE" \
-            --arg vm_type "$VM_TYPE" \
+            --arg vm_size "t3.medium" \
             --arg ssh_public_key "${{ secrets.SSH_PUBLIC_KEY }}" \
             --arg ssh_private_key "${{ secrets.SSH_PRIVATE_KEY }}" \
             --arg ssh_password "${{ secrets.SSH_PASSWORD }}" \
@@ -139,7 +108,6 @@ jobs:
               ssh_allowed_ip: $ssh_allowed_ip,
               vm_name: $vm_name,
               vm_size: $vm_size,
-              vm_type: $vm_type,
               ssh_public_key: $ssh_public_key,
               ssh_private_key: $ssh_private_key,
               ssh_password: $ssh_password,
@@ -221,6 +189,30 @@ jobs:
             fi
           fi
 
+      - name: Capture VM IP
+        run: |
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw vm_public_ip > vm_ip.txt
+          cat vm_ip.txt
+
+      - name: Store VM IP in Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm_ip
+          path: vm_ip.txt
+
+      - name: Store Scrape URL in Artifact (if demo)
+        if: ${{ inputs.setup_demo_clone == 'yes' }}
+        run: |
+          echo "http://$(cat vm_ip.txt)/scrape-demo/index.html" > scrape_url.txt
+        continue-on-error: true
+
+      - name: Upload Scrape URL Artifact
+        if: ${{ inputs.setup_demo_clone == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape_demo_url
+          path: scrape_url.txt
+
       - name: Capture SSH Key for User
         run: |
           terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw ssh_private_key > private_key.pem
@@ -232,27 +224,3 @@ jobs:
         with:
           name: ssh_private_key
           path: private_key.pem
-
-      - name: Capture VM IP Address
-        run: |
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw vm_ip > vm_ip.txt
-          cat vm_ip.txt
-
-      - name: Store VM IP Address in Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vm_ip
-          path: vm_ip.txt
-
-      - name: Capture Scrape URL
-        if: ${{ inputs.setup_demo_clone == 'yes' }}
-        run: |
-          echo "${{ inputs.clone_target_url }}" > scrape_url.txt
-          cat scrape_url.txt
-
-      - name: Store Scrape URL in Artifact
-        if: ${{ inputs.setup_demo_clone == 'yes' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: scrape_url
-          path: scrape_url.txt
