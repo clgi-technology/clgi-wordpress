@@ -1,5 +1,5 @@
 aws_region             = "us-west-2"
-vm_name                = "clgi-aws-vm"
+vm_name                = "aws-vm"
 vm_size                = "t3.medium"
 ssh_allowed_ip         = "0.0.0.0/0"
 deployment_mode        = "sandbox"
