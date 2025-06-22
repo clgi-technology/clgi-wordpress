@@ -27,3 +27,7 @@ output "public_ip" {
   value = try(aws_instance.vm[0].public_ip, null)
   description = "Public IP address of the AWS EC2 instance"
 }
+output "vm_ip" {
+  description = "The public IP address of the VM"
+  value       = aws_instance.main.public_ip  # or google_compute_instance / azurerm_linux_virtual_machine
+}
