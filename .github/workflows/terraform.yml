@@ -60,10 +60,6 @@ jobs:
       TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
 
-    outputs:
-      vm_ip: ${{ steps.capture_vm_ip.outputs.vm_ip }}
-      scrape_url: ${{ steps.set_scrape_url.outputs.scrape_url }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -194,20 +190,28 @@ jobs:
           fi
 
       - name: Capture VM IP
-        id: capture_vm_ip
         run: |
-          vm_ip=$(terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw vm_public_ip)
-          echo "vm_ip=$vm_ip" >> $GITHUB_OUTPUT
+          terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw vm_public_ip > vm_ip.txt
+          cat vm_ip.txt
 
-      - name: Set scrape URL output
-        id: set_scrape_url
+      - name: Store VM IP in Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm_ip
+          path: vm_ip.txt
+
+      - name: Store Scrape URL in Artifact (if demo)
+        if: ${{ inputs.setup_demo_clone == 'yes' }}
         run: |
-          if [[ "${{ inputs.setup_demo_clone }}" == "yes" ]]; then
-            scrape_url="http://$(terraform -chdir=deployments/${{ inputs.cloud_provider }} output -raw vm_public_ip)/scrape-demo/index.html"
-          else
-            scrape_url=""
-          fi
-          echo "scrape_url=$scrape_url" >> $GITHUB_OUTPUT
+          echo "http://$(cat vm_ip.txt)/scrape-demo/index.html" > scrape_url.txt
+        continue-on-error: true
+
+      - name: Upload Scrape URL Artifact
+        if: ${{ inputs.setup_demo_clone == 'yes' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape_demo_url
+          path: scrape_url.txt
 
       - name: Capture SSH Key for User
         run: |
