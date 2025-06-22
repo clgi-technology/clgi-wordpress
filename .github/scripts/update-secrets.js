@@ -49,7 +49,11 @@ const sodium = require("tweetsodium");
 
       console.log(`✅ Secret ${secretName} updated`);
     } catch (error) {
-      console.error(`❌ Error updating secret ${secretName}:`, error.message || error);
+      if (error.status === 401) {
+        console.error(`❌ Error updating secret ${secretName}: Bad credentials (401). Check GH_PAT_FOR_SECRETS scope.`);
+      } else {
+        console.error(`❌ Error updating secret ${secretName}:`, error.message || error);
+      }
       throw error;
     }
   }
