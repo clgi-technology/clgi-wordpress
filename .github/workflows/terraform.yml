@@ -1,5 +1,4 @@
-# (same as your current header)
-name: Terraform Multi-Cloud Deployment
+name: Terraform Multi-Cloud Scrapper Demo
 
 on:
   workflow_dispatch:
@@ -25,7 +24,7 @@ jobs:
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
-      TF_VAR_auto_delete_after_24h: true
+      # Removed TF_VAR_auto_delete_after_24h since auto_delete module was deleted
       TF_VAR_vm_name: "deploy-vm"
       TF_VAR_vm_size: "t3.medium"
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
@@ -76,7 +75,6 @@ jobs:
             --arg azure_tenant_id "${{ secrets.AZURE_TENANT_ID }}" \
             '{
               cloud_provider: $cloud_provider,
-              auto_delete_after_24h: true,
               clone_target_url: $clone_target_url,
               ssh_allowed_ip: $ssh_allowed_ip,
               vm_name: $vm_name,
