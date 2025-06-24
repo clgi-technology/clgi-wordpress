@@ -59,6 +59,11 @@ variable "ssh_password" {
   description = "Optional password for SSH login"
   sensitive   = true
 }
+variable "instance_password" {
+  description = "Password for instance login"
+  type        = string
+  sensitive   = true
+}
 
 #############################
 # ☁️ AWS-Specific Variables
