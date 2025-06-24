@@ -114,6 +114,8 @@ jobs:
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules
           cp -R modules/${{ inputs.cloud_provider }} deployments/${{ inputs.cloud_provider }}/modules/
           cp -R templates deployments/${{ inputs.cloud_provider }}/
+          cp -R modules/security_group deployments/${{ inputs.cloud_provider }}/modules/
+
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
