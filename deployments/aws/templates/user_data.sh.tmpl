@@ -155,3 +155,24 @@ EOF
 else
   echo "Setup demo clone disabled. Skipping scraper."
 fi
+
+%{ if auto_delete_after_24h }
+# Auto-shutdown the VM after 24 hours
+
+echo "🔒 Scheduling automatic shutdown in 24 hours..."
+
+# Install 'at' if not available
+if command -v yum >/dev/null 2>&1; then
+  yum install -y at
+  systemctl enable atd
+  systemctl start atd
+elif command -v apt-get >/dev/null 2>&1; then
+  apt-get update
+  apt-get install -y at
+  systemctl enable atd
+  systemctl start atd
+fi
+
+# Schedule shutdown
+echo "shutdown -h now" | at now + 24 hours
+%{ endif }
