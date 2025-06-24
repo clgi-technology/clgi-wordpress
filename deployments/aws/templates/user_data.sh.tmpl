@@ -1,0 +1,157 @@
+#!/bin/bash
+
+# Enable SSH password login and set ec2-user password
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+sed -i 's/^#PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+
+echo "ec2-user:${ssh_password}" | chpasswd
+
+systemctl restart sshd
+
+set -euo pipefail
+exec > /var/log/user_data.log 2>&1
+
+echo "📦 Bootstrapping VM"
+
+if [ "${setup_demo_clone}" = "true" ]; then
+  echo "Setup demo clone enabled, running scraper..."
+
+  # Detect package manager and install dependencies
+  if command -v yum >/dev/null 2>&1; then
+    pkg_mgr="yum"
+  elif command -v apt-get >/dev/null 2>&1; then
+    pkg_mgr="apt-get"
+  else
+    echo "Unsupported package manager. Exiting."
+    exit 1
+  fi
+
+  echo "Installing dependencies with $pkg_mgr"
+  if [ "$pkg_mgr" = "yum" ]; then
+    yum update -y
+    yum install -y python3 python3-pip httpd git
+    systemctl enable httpd
+  elif [ "$pkg_mgr" = "apt-get" ]; then
+    apt-get update
+    apt-get install -y python3 python3-pip apache2 git
+    systemctl enable apache2
+  fi
+
+  pip3 install --upgrade pip
+  pip3 install 'urllib3<2.0' 'requests<2.31' beautifulsoup4
+
+  WEBROOT="/var/www/html/scrape-demo"
+  mkdir -p "$WEBROOT"
+  chown -R ec2-user:ec2-user "$WEBROOT"
+
+  SCRAPER_PATH="/home/ec2-user/scrape_deploy_key.py"
+
+  echo "Writing Python scraper script to $SCRAPER_PATH"
+  cat > "$SCRAPER_PATH" <<'EOF'
+#!/usr/bin/env python3
+import os
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
+
+BASE_URL = os.environ.get("SCRAPE_URL", "https://example.com")
+OUTPUT_DIR = "/var/www/html/scrape-demo"
+
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
+}
+
+def save_file(path, content, mode='wb'):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, mode) as f:
+        f.write(content)
+
+def is_valid_url(url):
+    parsed = urlparse(url)
+    return parsed.scheme in ('http', 'https')
+
+def get_local_path(url):
+    parsed = urlparse(url)
+    path = parsed.path
+    if path.endswith('/'):
+        path += 'index.html'
+    elif not os.path.splitext(path)[1]:
+        path += '.html'
+    return os.path.join(OUTPUT_DIR, path.lstrip('/'))
+
+def scrape_page(url, visited):
+    if url in visited:
+        return
+    visited.add(url)
+
+    print(f"Scraping {url}")
+    try:
+        resp = requests.get(url, headers=HEADERS)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"Failed to fetch {url}: {e}")
+        return
+
+    soup = BeautifulSoup(resp.text, 'html.parser')
+
+    local_path = get_local_path(url)
+    save_file(local_path, resp.text.encode('utf-8'))
+
+    tags_attrs = {
+        'img': 'src',
+        'link': 'href',
+        'script': 'src',
+    }
+
+    for tag, attr in tags_attrs.items():
+        for element in soup.find_all(tag):
+            asset_url = element.get(attr)
+            if not asset_url:
+                continue
+            full_url = urljoin(url, asset_url)
+            if not is_valid_url(full_url):
+                continue
+
+            asset_local_path = get_local_path(full_url)
+            if not os.path.exists(asset_local_path):
+                try:
+                    r = requests.get(full_url, headers=HEADERS)
+                    r.raise_for_status()
+                    save_file(asset_local_path, r.content)
+                except Exception as e:
+                    print(f"Failed to download asset {full_url}: {e}")
+
+            rel_path = os.path.relpath(asset_local_path, os.path.dirname(local_path))
+            element[attr] = rel_path.replace('\\', '/')
+
+    save_file(local_path, soup.prettify('utf-8'))
+
+def main():
+    print(f"Starting scrape of {BASE_URL} into {OUTPUT_DIR}")
+    scrape_page(BASE_URL, set())
+    print("Scraping complete.")
+
+if __name__ == '__main__':
+    main()
+EOF
+
+  chmod +x "$SCRAPER_PATH"
+
+  echo "Running Python scraper..."
+  export SCRAPE_URL="${clone_target_url}"
+  python3 "$SCRAPER_PATH"
+
+  echo "Setting permissions for web server"
+  if [ "$pkg_mgr" = "yum" ]; then
+    chown -R apache:apache "$WEBROOT"
+    systemctl restart httpd
+  elif [ "$pkg_mgr" = "apt-get" ]; then
+    chown -R www-data:www-data "$WEBROOT"
+    systemctl restart apache2
+  fi
+
+  echo "✅ Scraping and deployment complete. Website available at VM_IP/scrape-demo"
+
+else
+  echo "Setup demo clone disabled. Skipping scraper."
+fi
