@@ -1,4 +1,4 @@
-# 🧾 Terraform Multi-Cloud Website Scrapper Deployment for Demo purposes
+# 🧾 Terraform Multi-Cloud Website Scrapper Demo
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/terraform.yml?branch=main&label=CI/CD&logo=github)](https://github.com/your-org/your-repo/actions/workflows/terraform.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
