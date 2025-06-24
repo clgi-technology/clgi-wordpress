@@ -8,25 +8,9 @@ on:
         required: true
         type: choice
         options: [aws, gcp, azure]
-      deployment_mode:
-        description: "Deployment mode"
-        required: true
-        type: choice
-        options: [sandbox, production]
-      auto_delete_after_24h:
-        description: "Enable auto-delete after 24h"
-        required: true
-        type: choice
-        options: ["true", "false"]
-      setup_demo_clone:
-        description: "Scrape external website homepage?"
-        required: true
-        type: choice
-        options: ["yes", "no"]
-        default: "no"
       clone_target_url:
         description: "External website URL to scrape (e.g., https://example.com)"
-        required: false
+        required: true
       ssh_allowed_ip:
         description: "CIDR IP range allowed to SSH"
         required: true
@@ -38,11 +22,9 @@ jobs:
 
     env:
       TF_VAR_cloud_provider: ${{ inputs.cloud_provider }}
-      TF_VAR_deployment_mode: ${{ inputs.deployment_mode }}
-      TF_VAR_auto_delete_after_24h: ${{ inputs.auto_delete_after_24h == 'true' }}
-      TF_VAR_setup_demo_clone: ${{ inputs.setup_demo_clone == 'yes' }}
       TF_VAR_clone_target_url: ${{ inputs.clone_target_url }}
       TF_VAR_ssh_allowed_ip: ${{ inputs.ssh_allowed_ip }}
+      TF_VAR_auto_delete_after_24h: true
       TF_VAR_vm_name: "deploy-vm"
       TF_VAR_vm_size: "t3.medium"
 
@@ -71,18 +53,11 @@ jobs:
           sudo mv terraform /usr/local/bin/
           terraform -version
 
-      - name: Normalize boolean inputs
-        run: |
-          echo "AUTO_DELETE=$( [[ '${{ inputs.auto_delete_after_24h }}' == 'true' ]] && echo true || echo false )" >> $GITHUB_ENV
-
       - name: Generate terraform.auto.tfvars.json
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}
           jq -n \
             --arg cloud_provider "${{ inputs.cloud_provider }}" \
-            --arg deployment_mode "${{ inputs.deployment_mode }}" \
-            --argjson auto_delete_after_24h "$AUTO_DELETE" \
-            --argjson setup_demo_clone "$( [[ "${{ inputs.setup_demo_clone }}" == "yes" ]] && echo true || echo false )" \
             --arg clone_target_url "${{ inputs.clone_target_url }}" \
             --arg ssh_allowed_ip "${{ inputs.ssh_allowed_ip }}" \
             --arg vm_name "deploy-vm" \
@@ -101,9 +76,7 @@ jobs:
             --arg azure_tenant_id "${{ secrets.AZURE_TENANT_ID }}" \
             '{
               cloud_provider: $cloud_provider,
-              deployment_mode: $deployment_mode,
-              auto_delete_after_24h: $auto_delete_after_24h,
-              setup_demo_clone: $setup_demo_clone,
+              auto_delete_after_24h: true,
               clone_target_url: $clone_target_url,
               ssh_allowed_ip: $ssh_allowed_ip,
               vm_name: $vm_name,
@@ -138,26 +111,22 @@ jobs:
             gcloud auth list || (echo "❌ Invalid GCP credentials" && exit 1)
           fi
 
-      - name: Copy Modules, Templates, and Scripts
+      - name: Copy Modules Only
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules
-          mkdir -p deployments/${{ inputs.cloud_provider }}/templates
-          mkdir -p deployments/${{ inputs.cloud_provider }}/scripts
           cp -R modules/${{ inputs.cloud_provider }} deployments/${{ inputs.cloud_provider }}/modules/
-          cp -R templates/* deployments/${{ inputs.cloud_provider }}/templates/
-          cp -R scripts/* deployments/${{ inputs.cloud_provider }}/scripts/
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
       - name: Terraform Validate
         run: |
-          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
           terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
       - name: Terraform Plan
         run: |
-          cp -R modules templates scripts deployments/${{ inputs.cloud_provider }}/
+          cp -R modules deployments/${{ inputs.cloud_provider }}/
           terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
       - name: Terraform Apply with retry and state recovery
@@ -200,14 +169,12 @@ jobs:
           name: vm_ip
           path: vm_ip.txt
 
-      - name: Store Scrape URL in Artifact (if demo)
-        if: ${{ inputs.setup_demo_clone == 'yes' }}
+      - name: Store Scrape URL in Artifact
         run: |
           echo "http://$(cat vm_ip.txt)/scrape-demo/index.html" > scrape_url.txt
         continue-on-error: true
 
       - name: Upload Scrape URL Artifact
-        if: ${{ inputs.setup_demo_clone == 'yes' }}
         uses: actions/upload-artifact@v4
         with:
           name: scrape_demo_url
