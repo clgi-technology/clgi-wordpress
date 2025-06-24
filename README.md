@@ -1,4 +1,4 @@
-# 🧾 Terraform Multi-Cloud Deployment
+# 🧾 Terraform Multi-Cloud Website Scrapper Deployment for Demo purposes
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/terraform.yml?branch=main&label=CI/CD&logo=github)](https://github.com/your-org/your-repo/actions/workflows/terraform.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -410,6 +410,77 @@ deployments/<cloud-platform>/.
 ```
 
 📬 **Feedback & Contributions**
+
+# Terraform Multi-Cloud Scraper Deployment
+
+This project provisions a VM on **AWS**, **GCP**, or **Azure** that automatically scrapes a target website's homepage and serves it via a web server.
+
+## 💡 Features
+
+- One-click VM deployment via GitHub Actions
+- Automatically scrapes and hosts the homepage of any public website
+- SSH access with configurable password/IP restrictions
+- Works across AWS, GCP, or Azure
+- Outputs:
+  - Public VM IP
+  - Scraped website URL (`http://<vm-ip>/scrape-demo/`)
+  - SSH private key artifact
+
+## 🚀 How to Deploy
+
+1. Go to the **Actions** tab in GitHub.
+2. Select **"Terraform Multi-Cloud Deployment"** workflow.
+3. Click **"Run workflow"** and enter:
+   - `cloud_provider`: Choose `aws`, `gcp`, or `azure`
+   - `clone_target_url`: Any public website (e.g., `https://example.com`)
+   - `ssh_allowed_ip`: IP/CIDR allowed for SSH (default: `0.0.0.0/0`)
+
+> Note: Secrets must be configured in GitHub repo settings for your selected cloud provider.
+
+## 🔐 Required GitHub Secrets
+
+| Secret Name              | Description                         |
+|--------------------------|-------------------------------------|
+| `AWS_ACCESS_KEY_ID`      | AWS Access Key                      |
+| `AWS_SECRET_ACCESS_KEY`  | AWS Secret Key                      |
+| `AWS_SESSION_TOKEN`      | (Optional) AWS session token        |
+| `GCP_PROJECT_ID`         | GCP project                         |
+| `GCP_CREDENTIALS_JSON`   | GCP service account JSON            |
+| `AZURE_CLIENT_ID`        | Azure Client ID                     |
+| `AZURE_CLIENT_SECRET`    | Azure Client Secret                 |
+| `AZURE_SUBSCRIPTION_ID`  | Azure Subscription ID               |
+| `AZURE_TENANT_ID`        | Azure Tenant ID                     |
+| `SSH_PUBLIC_KEY`         | Your SSH public key                 |
+| `SSH_PRIVATE_KEY`        | Your SSH private key (PEM)          |
+| `SSH_PASSWORD`           | Password for SSH via username       |
+
+## 📁 Project Structure
+
+├── .github/workflows/terraform.yml # GitHub Actions workflow
+├── deployments/
+│ └── aws/ # Terraform files for AWS
+│ └── gcp/ # Terraform files for GCP
+│ └── azure/ # Terraform files for Azure
+├── modules/
+│ └── aws/ # AWS resource modules
+│ └── gcp/ # GCP resource modules
+│ └── azure/ # Azure resource modules
+├── templates/
+│ └── user_data.sh.tmpl # Bootstraps scraper and webserver
+
+
+
+## 📦 Output Artifacts
+
+- `vm_ip.txt`: The public IP of the provisioned VM
+- `scrape_url.txt`: Link to scraped copy of the target site
+- `ssh_private_key.pem`: Use to SSH into VM as `ec2-user` (or OS equivalent)
+
+
+## 🧹 Optional: Auto-delete After 24 Hours
+
+You can use the included **Lambda function** (see below) to automatically terminate the VM 24 hours after provisioning.
+
 Contributions are welcome! Please open issues, submit pull requests, or suggest new features and cloud providers.
 
 
