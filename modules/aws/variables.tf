@@ -14,6 +14,11 @@ variable "vm_size" {
   type        = string
 }
 
+variable "instance_id" {
+  type        = string
+  description = "EC2 instance ID"
+}
+
 variable "aws_region" {
   description = "AWS Region"
   type        = string
