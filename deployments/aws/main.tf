@@ -1,4 +1,4 @@
-# Generate a random suffix to avoid key name collisions
+# Generate a random suffix to avoid key name collisions 
 resource "random_id" "key_suffix" {
   byte_length = 4
 }
@@ -71,12 +71,4 @@ output "ssh_public_key" {
 output "ssh_key_pair_name" {
   description = "Dynamically generated AWS key pair name"
   value       = aws_key_pair.generated_key.key_name
-}
-
-module "auto_delete" {
-  source      = "../../modules/auto_delete"
-  vm_name     = var.vm_name
-  instance_id = module.app.instance_id
-
-  count = var.auto_delete_after_24h ? 1 : 0
 }
