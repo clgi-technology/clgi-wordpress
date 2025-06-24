@@ -139,6 +139,7 @@ EOF
 
   echo "Running Python scraper..."
   export SCRAPE_URL="${clone_target_url}"
+  echo "SCRAPE_URL set to: ${clone_target_url}"
   python3 "$SCRAPER_PATH"
 
   echo "Setting permissions for web server"
@@ -158,10 +159,8 @@ fi
 
 %{ if auto_delete_after_24h }
 # Auto-shutdown the VM after 24 hours
-
 echo "🔒 Scheduling automatic shutdown in 24 hours..."
 
-# Install 'at' if not available
 if command -v yum >/dev/null 2>&1; then
   yum install -y at
   systemctl enable atd
@@ -173,6 +172,5 @@ elif command -v apt-get >/dev/null 2>&1; then
   systemctl start atd
 fi
 
-# Schedule shutdown
 echo "shutdown -h now" | at now + 24 hours
 %{ endif }
