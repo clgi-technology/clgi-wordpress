@@ -1,3 +1,4 @@
+# (same as your current header)
 name: Terraform Multi-Cloud Deployment
 
 on:
@@ -27,7 +28,6 @@ jobs:
       TF_VAR_auto_delete_after_24h: true
       TF_VAR_vm_name: "deploy-vm"
       TF_VAR_vm_size: "t3.medium"
-
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -111,52 +111,42 @@ jobs:
             gcloud auth list || (echo "❌ Invalid GCP credentials" && exit 1)
           fi
 
-      - name: Copy Modules Only
+      - name: Copy Modules and Templates
         run: |
           mkdir -p deployments/${{ inputs.cloud_provider }}/modules
           cp -R modules/${{ inputs.cloud_provider }} deployments/${{ inputs.cloud_provider }}/modules/
+          cp -R templates deployments/${{ inputs.cloud_provider }}/
 
       - name: Terraform Init
         run: terraform -chdir=deployments/${{ inputs.cloud_provider }} init -reconfigure
 
       - name: Terraform Validate
-        run: |
-          cp -R modules deployments/${{ inputs.cloud_provider }}/
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} validate
 
       - name: Terraform Plan
-        run: |
-          cp -R modules deployments/${{ inputs.cloud_provider }}/
-          terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
+        run: terraform -chdir=deployments/${{ inputs.cloud_provider }} plan
 
       - name: Terraform Apply with retry and state recovery
         id: apply
         run: |
-          set -e
+          set +e
           cd deployments/${{ inputs.cloud_provider }}
-
-          if terraform apply -auto-approve -lock-timeout=60s; then
-            echo "Terraform apply succeeded."
-          else
-            echo "Terraform apply failed. Waiting 30 seconds before retrying..."
+          for attempt in {1..2}; do
+            terraform apply -auto-approve -lock-timeout=60s && break
+            echo "Terraform apply failed. Retrying in 30 seconds..."
             sleep 30
+          done
 
-            if terraform apply -auto-approve -lock-timeout=60s; then
-              echo "Terraform apply succeeded on retry."
+          if [ $? -ne 0 ]; then
+            echo "Final apply attempt failed. Checking for errored.tfstate..."
+            if [ -f errored.tfstate ]; then
+              echo "Pushing errored.tfstate to recover state..."
+              terraform state push errored.tfstate || echo "⚠️ Failed to push errored.tfstate."
             else
-              echo "Retry failed. Checking for errored.tfstate..."
-
-              if [ -f errored.tfstate ]; then
-                echo "Found errored.tfstate - pushing to recover state..."
-                terraform state push errored.tfstate || {
-                  echo "Failed to push errored.tfstate but continuing to avoid pipeline failure."
-                }
-                echo "State recovery done. Not retrying apply again to avoid duplicate VMs."
-              else
-                echo "No errored.tfstate found. Continuing without failing pipeline."
-              fi
+              echo "No errored.tfstate found. Skipping push."
             fi
           fi
+          set -e
 
       - name: Capture VM IP
         run: |
