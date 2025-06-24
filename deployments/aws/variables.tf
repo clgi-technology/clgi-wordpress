@@ -18,11 +18,6 @@ variable "auto_delete_after_24h" {
   default     = false
 }
 
-variable "instance_id" {
-  type        = string
-  description = "EC2 instance ID"
-}
-
 variable "vm_name" {
   type        = string
   description = "Name of the VM to deploy"
