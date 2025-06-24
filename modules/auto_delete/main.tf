@@ -59,7 +59,7 @@ resource "aws_lambda_function" "auto_delete_lambda" {
 resource "aws_cloudwatch_event_rule" "auto_delete_timer" {
   name                = "${var.vm_name}-auto-delete-rule"
   schedule_expression = "rate(24 hours)"
-  is_enabled          = true
+  state               = "ENABLED"
 }
 
 resource "aws_cloudwatch_event_target" "lambda_target" {
