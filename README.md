@@ -456,6 +456,7 @@ This project provisions a VM on **AWS**, **GCP**, or **Azure** that automaticall
 
 ## 📁 Project Structure
 
+```
 ├── .github/workflows/terraform.yml # GitHub Actions workflow
 ├── deployments/
 │ └── aws/ # Terraform files for AWS
@@ -468,7 +469,7 @@ This project provisions a VM on **AWS**, **GCP**, or **Azure** that automaticall
 ├── templates/
 │ └── user_data.sh.tmpl # Bootstraps scraper and webserver
 
-
+```
 
 ## 📦 Output Artifacts
 
