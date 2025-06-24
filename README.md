@@ -466,6 +466,11 @@ This project provisions a VM on **AWS**, **GCP**, or **Azure** that automaticall
 │ └── aws/ # AWS resource modules
 │ └── gcp/ # GCP resource modules
 │ └── azure/ # Azure resource modules
+│ └── auto_delete/
+│   ├── lambda_auto_delete.py
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
 ├── templates/
 │ └── user_data.sh.tmpl # Bootstraps scraper and webserver
 
