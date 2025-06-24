@@ -19,11 +19,13 @@ data "template_file" "user_data" {
   template = file("${path.module}/templates/user_data.sh.tmpl")
 
   vars = {
-    deployment_mode  = var.deployment_mode
-    setup_demo_clone = var.setup_demo_clone  # boolean true/false now
-    clone_target_url = var.clone_target_url
-    scripts_url      = var.scripts_url
-    ssh_password     = var.ssh_password
+    deployment_mode       = var.deployment_mode
+    setup_demo_clone      = var.setup_demo_clone  # boolean true/false now
+    clone_target_url      = var.clone_target_url
+    scripts_url           = var.scripts_url
+    ssh_password          = var.ssh_password
+
+    auto_delete_after_24h = var.auto_delete_after_24h
   }
 }
 
