@@ -4,7 +4,6 @@ vm_size                = "t3.medium"
 ssh_allowed_ip         = "0.0.0.0/0"
 deployment_mode        = "sandbox"
 setup_demo_clone       = false
-clone_target_url       = "https://www.clgi.org"
 auto_delete_after_24h  = true
 scripts_url            = "https://raw.githubusercontent.com/your-org/your-repo/main/scripts/"
 instance_password      = "P@ssw0rd123456!"
