@@ -27,4 +27,7 @@ output "public_ip" {
   value = try(aws_instance.vm[0].public_ip, null)
   description = "Public IP address of the AWS EC2 instance"
 }
-
+output "vm_name" {
+  description = "VM instance name"
+  value       = var.vm_name
+}
